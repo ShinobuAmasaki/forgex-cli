@@ -20,4 +20,4 @@ source-form = "free"
 forgex = { git = "https://github.com/ShinobuAmasaki/forgex", branch = "exp"}
 [preprocess]
 [preprocess.cpp]
-macros = ["RELEASE"] # This macro is not defined in the source codes, but it tells fpm to use the preprocessor.
+suffixes = ["f90", "F90"]
