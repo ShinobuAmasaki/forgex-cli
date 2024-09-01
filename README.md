@@ -1,6 +1,7 @@
 # Forgex Command Line Interface
 
-This package provides a command line tool which named `forgex-cli` for interacting with Forgex—Fortran Regular Expression. The `forgex-cli` command was originally part of Forgex package, but was moved to this separate repository starting with Forgex version 3.5.
+This package provides a command line tool which named `forgex-cli` for interacting with [Forgex—Fortran Regular Expression](https://github.com/ShinobuAmasaki/forgex).
+The `forgex-cli` command was originally part of Forgex package, but was moved to this separate repository starting with Forgex version 3.5.
 
 ## Installation
 
