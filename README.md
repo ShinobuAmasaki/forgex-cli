@@ -1,3 +1,5 @@
+# Forgex Command Line Interface
+
 This package provides a command line tool which named `forgex-cli` for interacting with Forgex—Fortran Regular Expression. The `forgex-cli` command was originally part of Forgex package, but was moved to this separate repository starting with Forgex version 3.5.
 
 ## Installation
@@ -221,4 +223,4 @@ The command-line interface design of `forgex-cli` was inspired in part by the pa
 1. [rust-lang/regex/regex-cli](https://github.com/rust-lang/regex/tree/master/regex-cli)
 
 ## License
-Forgex-CLI is as a freely available under the MIT license. See [LICENSE](https://github.com/ShinobuAmasaki/forgex/blob/main/LICENSE).
+Forgex-CLI is as a freely available under the MIT license. See [LICENSE](https://github.com/ShinobuAmasaki/forgex-cli/blob/main/LICENSE).
