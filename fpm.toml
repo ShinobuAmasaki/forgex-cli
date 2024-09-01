@@ -1,5 +1,5 @@
 name = "forgex-cli"
-version = "3.4.0"
+version = "3.5.0"
 license = "MIT"
 author = "Amasaki Shinobu"
 maintainer = "amasaki203@gmail.com"
@@ -17,7 +17,8 @@ implicit-typing = false
 implicit-external = false
 source-form = "free"
 [dependencies]
-forgex = { git = "https://github.com/ShinobuAmasaki/forgex", branch = "exp"}
+forgex = { git = "https://github.com/ShinobuAmasaki/forgex", tag = "v3.5"}
+# forgex = { git = "https://github.com/ShinobuAmasaki/forgex", branch = "exp"}
 [preprocess]
 [preprocess.cpp]
 suffixes = ["f90", "F90"]
