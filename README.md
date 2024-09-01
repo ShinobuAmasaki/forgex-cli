@@ -50,7 +50,8 @@ It is assumed that you will use the Fortran Package Manager(`fpm`).
 
 ## Usage
 
-This article describe basic usage. [Please refer to the documentation](https://shinobuamasaki.github.io/forgex-cli) for detailed information on commands, subcommands, option flags, and displaying results.
+This article describes basic usage.
+<!-- [Please refer to the documentation](https://shinobuamasaki.github.io/forgex-cli) for detailed information on commands, subcommands, option flags, and displaying results. -->
 
 ### Command Line Interface
 
