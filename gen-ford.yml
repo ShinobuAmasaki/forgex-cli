@@ -1,8 +1,8 @@
-project:             Forgex—Fortran Regular Expression
-summary:             A Fortran regular expresion engine.
+project:             Forgex-CLI
+summary:             Fortran Regular Expression Command Line Tool
 license:             mit
 year:                2023-2024
-project_github:      https://github.com/ShinobuAmasaki/forgex
+project_github:      https://github.com/ShinobuAmasaki/forgex-cli
 author:              Amasaki Shinobu
 author_pic:          https://shinobuamasaki.github.io/img/shinobu.PNG
 github:              https://github.com/ShinobuAmasaki
