@@ -41,6 +41,8 @@ p code {
    color: black;
    font-style: normal;
    font-weight: normal;
+   border: none;
+
 }
 tbody {
    font-family: monospace;
@@ -72,12 +74,13 @@ h2 {
    border-bottom-color: #dee3e8;
 }
 h3 {
-   font-weight: 500;
+   font-weight: 600;
    margin: 25px 0 12px 0;
 }
 h4 small {
    font-family: monospace;
 }
+
 p .head {
    text-indent: 2rem;
 }

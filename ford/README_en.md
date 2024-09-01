@@ -1,212 +1,94 @@
-Forgex—Fortran Regular Expression—is a regular expression engine written entirely in Fortran.
+This package provides a command line tool which named `forgex-cli` for interacting with Forgex—Fortran Regular Expression. The `forgex-cli` command was originally part of Forgex package, but was moved to this separate repository starting with Forgex version 3.5.
 
-This project is managed by [Fortran Package Manager (FPM)](https://fpm.fortran-lang.org/index.html), providing basic processing of regular expression, and as a freely available under the MIT license.
-The engine's core algorithm uses a deterministic finite automaton (DFA) approach. This choice have been focused on runtime performance.
+## Installation
 
-## Features
+### Getting Source Code
+
+Clone the repository:
+
+```shell
+git clone https://github.com/shinobuamasaki/forgex-cli
+```
+
+Alternatively, download the latest source package:
+
+```shell
+wget https://github.com/ShinobuAmasaki/forgex-cli/archive/refs/tags/v3.5.tar.gz
+```
+
+In that case, decompress the archive file:
+
+```shell
+tar xvzf v3.5.tar.gz
+```
+
+### Building
+
+Change directory to the cloned or decompressed location:
+
+```shell
+cd forgex-cli
+```
+
+Execute building with Fortran Package Manager (`fpm`):
+
+```shell 
+fpm build
+```
+
+This will automatically resolve the dependency and compile `forgex-cli`, including `forgex`.
 
 
-#### Metacharacter
-- `|`  Vertical bar for alternation,
-- `*`  Asterisk, match zero or more,
-- `+`  Plus, match one or more,
-- `?`  Question, match zero or one,
-- `\`  escape metacharacter,
-- `.`  match any character.
+## Operation Check
 
-#### Character class
-- character class `[a-z]`
-- inverted character class `[^a-z]`
-- character class on UTF-8 codeset `[α-ωぁ-ん]`
-
-Note that inverted class does not match the control characters.
-
-#### Range of repetition
-- `{num}`,
-- `{,max}`,
-- `{min,}`,
-- `{min, max}`,
-where `num` and `max` must NOT be zero.
-
-#### Anchor
-- `^`, matches the beginning of a line
-- `$`, matches the end of a line
-
-#### Shorthand
-- `\t`, tab character
-- `\n`, new line character (LF or CRLF)
-- `\r`, return character (CR)
-- `\s`, blank character (white space, TAB, CR, LF, FF, "Zenkaku" space U+3000)
-- `\S`, non-blank character
-- `\w`, (`[a-zA-Z0-9_]`)
-- `\W`, (`[^a-zA-Z0-9_]`)
-- `\d`, digit character (`[0-9]`)
-- `\D`, non-digit character (`[^0-9]`)
-
-## Documentation
-The documentation is available in English and Japanese at [https://shinobuamasaki.github.io/forgex](https://shinobuamasaki.github.io/forgex).
-
-## Usage
-### Build
-
-Operation has been confirmed with the following compilers:
+Operation of this command has been confirmed with the following compilers:
 
 - GNU Fortran (`gfortran`) v13.2.1
 - Intel Fortran Compiler (`ifx`) 2024.0.0 20231017
 
-
-
 It is assumed that you will use the Fortran Package Manager(`fpm`).
 
-First of all, add the following to your project's `fpm.toml`:
+## Usage
 
-```toml
-[dependencies]
-forgex = {git = "https://github.com/shinobuamasaki/forgex"}
+This article describe basic usage. [Please refer to each article in the documentation](https://shinobuamasaki.github.io/forgex-cli/page/index.html) for detailed information on commands, subcommands, option flags, and displaying results.
+
+### Command Line Interface
+
+Currently, commands `find` and `debug`,  and following subcommands and sub-subcommands can be executed:
+
+```
+forgex-cli
+├──find
+│  └── match
+│      ├── lazy-dfa <pattern> <operator> <input text>
+│      ├── dense <pattern> <operator> <input text>
+│      └── forgex <pattern> <operator> <input text>
+└── debug
+    ├── ast <pattern>
+    └── thompson <pattern>
 ```
 
-### APIs
-When you write `use forgex` at the header on your program, `.in.` and `.match.` operators, `regex` subroutine, and `regex_f` function are introduced.
+Run the `forgex-cli` command as follows:
 
-```fortran
-program main
-   use :: forgex
-   implicit none
+```
+forgex-cli <comamnd> <subcommand> ...
+fpm run -- <command> <subcommand> ...
 ```
 
-The `.in.` operator returns true if the pattern is contained in the string.
+### Examples
 
-```fortran
-block
-   character(:), allocatable :: pattern, str
+#### `find` command 
 
-   pattern = 'foo(bar|baz)'
-   str = "foobarbaz"
-   print *, pattern .in. str  ! T
+Using the `find` command and the `match` subcommand, you can specify an engine and run benchmark tests on regular expression matching with `.in.` and `.match.` operators.
+After the subcommand, select the engine from,
 
-   str = "foofoo"
-   print *, pattern .in. str  ! F
-end block
-```
+- `lazy-dfa`,
+- `dense`,
+- `forgex`,
 
-The `.match.` operator returns true if the pattern exactly matches the string.
+and after that, specify the pattern, operator, and input string as if you were writing Fortran code using Forgex to perform matching.
 
-```fortran
-block
-   character(:), allocatable :: pattern, str
-
-   pattern = '\d{3}-\d{4}'
-   str = '100-0001'
-   print *, pattern .match. str  ! T
-
-   str = '1234567'
-   print *, pattern .match. str  ! F
-end block
-```
-
-The `regex` is a subroutine that returns the substring of a string that matches pattern as `intent(out)` argument.
-
-```fortran
-block
-   character(:), allocatable :: pattern, str, res
-   integer :: length
-
-   pattern = 'foo(bar|baz)'
-   str = 'foobarbaz'
-
-   call regex(pattern, str, res)
-   print *, res                              ! foobar
-
-   ! call regex(pattern, str, res, length)
-         ! the value 6 stored in optional `length` variable.
-
-end block
-```
-
-By using the `from`/`to` arugments, you can extract substrings from the given string.
-
-```fortran
-block
-   character(:), allocatable :: pattern, str, res
-   integer :: from, to
-
-   pattern = '[d-f]{3}'
-   str = 'abcdefghi'
-
-   call regex(pattern, str, res, from=from, to=to)
-   print *, res                   ! def
-
-   ! The `from` and `to` variables store the indices of the start and end points
-   ! of the matched part of the string `str`, respectively.
-
-   ! Cut out before the matched part.
-   print *, str(1:from-1)        ! abc
-
-   ! Cut out the matched part that equivalent to the result argument of the `regex` subrouine.
-   print *, str(from:to)         ! def
-
-   ! Cut out after the matched part.
-   print *, str(to+1:len(str))   ! ghi
-
-end block
-```
-
-The interface of `regex` subroutine is following:
-
-```fortran
-interface regex
-   module procedure :: subroutine__regex
-end interface
-
-pure subroutine subroutine__regex(pattern, text, res, length, from, to)
-   implicit none
-   character(*),              intent(in)    :: pattern, text
-   character(:), allocatable, intent(inout) :: res
-   integer,      optional,    intent(inout) :: length, from, to
-```
-
-If you want to the matched character string as the return value of the function,
-consider using `regex_f` defined in the `forgex` module.
-
-```fortran
-interface regex_f
-   module procedure :: function__regex
-end interface regex_f
-
-pure function function__regex(pattern, text) result(res)
-   implicit none
-   character(*), intent(in)  :: pattern, text
-   character(:), allocatable :: res
-```
-
-
-#### UTF-8 String matching
-
-UTF-8 string can be matched using regular expression patterns just like ASCII strings.
-The following example demonstrates matching Chinese characters.
-In this example, the `length` variable stores the byte length, and in this case there 10 3-byte characters, so the length is 30.
-
-```fortran
-block
-   character(:), allocatable :: pattern, str
-   integer :: length
-
-   pattern = "夢.{1,7}胡蝶"
-   str = "昔者莊周夢爲胡蝶　栩栩然胡蝶也"
-
-   print *, pattern .in. str            ! T
-   call regex(pattern, str, res, length)
-   print *, res                         ! 夢爲胡蝶　栩栩然胡蝶
-   print *, length                      ! 30 (is 3-byte * 10 characters)
-
-end block
-```
-
-### Command Line Interface Tool
-
-Version 3.2 introduces a command line tool that is called  `forgex-cli` and uses the Forgex engine for debugging, testing, and benchmarking regex matches. It performs matching with commands such as the one shown in below, and outputs the results directly to standard output. [For detailed information, please refer to the documentation.](https://shinobuamasaki.github.io/forgex/page/English/forgex_on_command_line_en.html)
-
-Command:
+For instance, execute the `find` command:
 
 ```shell
 forgex-cli find match lazy-dfa '([a-z]*g+)n?' .match. 'assign'
@@ -215,20 +97,24 @@ forgex-cli find match lazy-dfa '([a-z]*g+)n?' .match. 'assign'
 If you run it through `fpm run`:
 
 ```shell
-fpm run forgex-cli --profile release -- find match lazy-dfa '([a-z]*g+)n?' .match. 'assign'
+fpm run --profile release -- find match lazy-dfa '([a-z]*g+)n?' .match. 'assign'
 ```
 
-Output:
+and you will get output similar to the following:
+
+<div class="none-highlight-user">
 
 ```
-            pattern: ([a-z]*g+)n?
-               text: 'assign'
-         parse time:        46.5us
-   compile nfa time:        74.9us
-dfa initialize time:        78.4us
-        search time:       661.7us
-    matching result:         T
- memory (estimated):     10380
+                pattern: ([a-z]*g+)n?
+                   text: 'assign'
+             parse time:        42.9μs
+   extract literal time:        23.0μs
+            runs engine:         T
+       compile nfa time:        26.5μs
+    dfa initialize time:         4.6μs
+            search time:       617.1μs
+        matching result:         T
+ automata and tree size:     10324  bytes
 
 ========== Thompson NFA ===========
 state    1: (?, 5)
@@ -252,24 +138,81 @@ state    4A = ( 2 4 5 6 )
 ===================================
 ```
 
+</div>
+
+#### `debug`
+
+Using `debug` command allows you to obtain information about the abstract syntax tree and the structure of the Thompson NFA.
+
+For example, execute the `debug` command with `ast` subcommand:
+
+```shell
+forgex-cli debug ast 'foo[0-9]+bar'
+```
+
+then, you will get output similar to the following: 
+
+<div class="none-highlight-user">
+
+```
+        parse time:       133.8μs
+      extract time:        36.8μs
+ extracted literal:
+  extracted prefix: foo
+  extracted suffix: bar
+memory (estimated):       848
+(concatenate (concatenate (concatenate (concatenate (concatenate (concatenate "f" "o") "o") (concatenate [ "0"-"9";] (closure[ "0"-"9";]))) "b") "a") "r")
+```
+
+</div>
+
+Note: Notice also that the prefix and suffix literals are now extracted.
+
+
+
+Here's how to get a graph of the NFA. To get the Thompson NFA, run the following command:
+
+```shell
+forgex-cli debug thompson 'foo[0-9]+bar'
+```
+
+This will give you output like this:
+
+```
+        parse time:       144.5μs
+  compile nfa time:        57.0μs
+memory (estimated):     11589
+
+========== Thompson NFA ===========
+state    1: (f, 8)
+state    2: <Accepted>
+state    3: (r, 2)
+state    4: (a, 3)
+state    5: (b, 4)
+state    6: (["0"-"9"], 9)
+state    7: (o, 6)
+state    8: (o, 7)
+state    9: (?, 10)
+state   10: (["0"-"9"], 11)(?, 5)
+state   11: (?, 10)
+
+Note: all segments of NFA were disjoined with overlapping portions.
+===================================
+```
+
 ### Notes
 
-- A program built by `gfortran` on Windows and macOC may crash if an allocatable character is used in an OpenMP parallel block.
-- If you use the command line tool with PowerShell on Windows, use UTF-8 as your system locale to properly input and output Unicode characters.
-
+- You can get information about available option flags specifying the `--help` command line argument.
+- If you use this `forgex-cli` command with PowerShell on Windows, use UTF-8 as your system locale to properly input and output Unicode characters.
 
 ## To do
 
-- Add Unicode escape sequence `\p{...}`
-- Deal with invalid byte strings in UTF-8
-- ✅️ Optimize by literal searching method
+The following features are planned to be implemented in the future:
+
+- Publish the documentation
+- Support CMake building
 - ✅️ Add a CLI tool for debugging and benchmarking
-- ✅️ Make all operators `pure elemental` attribute
-- ✅️ Publish the documentation
-- ✅️ Support UTF-8 basic feature
-- ✅️ Construct DFA on-the-fly
-- ✅️ Support CMake building
-- <s>Parallelize on matching</s>
+- ✅️ Add Time measurement tools (basic)
 
 ## Code Convention
 
@@ -277,18 +220,11 @@ All code contained herein shall be written with a three-space indentation.
 
 ## Acknowledgements
 
-For the algorithm of the power set construction method and syntax analysis, I referred to Russ Cox's article and Yoshiyuki Kondo's book.
-The implementation of the priority queue was based on [the code written by ue1221](https://github.com/ue1221/fortran-utilities).
-The idea of applying the `.in.` operator to strings was inspired by kazulagi's one.
 The command-line interface design of `forgex-cli` was inspired in part by the package `regex-cli` of Rust language.
 
 ## References
 
-1. Russ Cox ["Regular Expression Matching Can Be Simple And Fast"](https://swtch.com/~rsc/regexp/regexp1.html), 2007
-2. 近藤嘉雪 (Yoshiyuki Kondo), "定本 Cプログラマのためのアルゴリズムとデータ構造", 1998, SB Creative.
-3. [ue1221/fortran-utilities](https://github.com/ue1221/fortran-utilities)
-4. Haruka Tomobe (kazulagi), [https://github.com/kazulagi](https://github.com/kazulagi), [his article in Japanese](https://qiita.com/soybean/items/7cdd2156a9d8843c0d91)
-5. [rust-lang/regex/regex-cli](https://github.com/rust-lang/regex/tree/master/regex-cli)
+1. [rust-lang/regex/regex-cli](https://github.com/rust-lang/regex/tree/master/regex-cli)
 
 ## License
-Forgex is as a freely available under the MIT license. See [LICENSE](https://github.com/ShinobuAmasaki/forgex/blob/main/LICENSE).
+Forgex-CLI is as a freely available under the MIT license. See [LICENSE](https://github.com/ShinobuAmasaki/forgex-cli/blob/main/LICENSE).

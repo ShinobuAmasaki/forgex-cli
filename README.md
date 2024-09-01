@@ -1,23 +1,94 @@
-# forgex-cli
+This package provides a command line tool which named `forgex-cli` for interacting with Forgex—Fortran Regular Expression. The `forgex-cli` command was originally part of Forgex package, but was moved to this separate repository starting with Forgex version 3.5.
 
-This is a command line tool for interacting with Fortran Regular Expression.
+## Installation
 
-## Features
+### Getting Source Code
 
-## Usage
-### Build
+Clone the repository:
 
-Operation has been confirmed with the following compilers:
+```shell
+git clone https://github.com/shinobuamasaki/forgex-cli
+```
+
+Alternatively, download the latest source package:
+
+```shell
+wget https://github.com/ShinobuAmasaki/forgex-cli/archive/refs/tags/v3.5.tar.gz
+```
+
+In that case, decompress the archive file:
+
+```shell
+tar xvzf v3.5.tar.gz
+```
+
+### Building
+
+Change directory to the cloned or decompressed location:
+
+```shell
+cd forgex-cli
+```
+
+Execute building with Fortran Package Manager (`fpm`):
+
+```shell 
+fpm build
+```
+
+This will automatically resolve the dependency and compile `forgex-cli`, including `forgex`.
+
+
+## Operation Check
+
+Operation of this command has been confirmed with the following compilers:
 
 - GNU Fortran (`gfortran`) v13.2.1
 - Intel Fortran Compiler (`ifx`) 2024.0.0 20231017
 
 It is assumed that you will use the Fortran Package Manager(`fpm`).
 
+## Usage
+
+This article describe basic usage. [Please refer to the documentation](https://shinobuamasaki.github.io/forgex-cli) for detailed information on commands, subcommands, option flags, and displaying results.
+
+### Command Line Interface
+
+Currently, commands `find` and `debug`,  and following subcommands and sub-subcommands can be executed:
+
+```
+forgex-cli
+├──find
+│  └── match
+│      ├── lazy-dfa <pattern> <operator> <input text>
+│      ├── dense <pattern> <operator> <input text>
+│      └── forgex <pattern> <operator> <input text>
+└── debug
+    ├── ast <pattern>
+    └── thompson <pattern>
+```
+
+Run the `forgex-cli` command as follows:
+
+```
+forgex-cli <comamnd> <subcommand> ...
+fpm run -- <command> <subcommand> ...
+```
 
 ### Examples
 
-Command:
+#### `find` command 
+
+Using the `find` command and the `match` subcommand, you can specify an engine and run benchmark tests on regular expression matching with `.in.` and `.match.` operators.
+After the subcommand, select the engine from,
+
+- `lazy-dfa`,
+- `dense`,
+- `forgex`,
+
+and after that, specify the pattern, operator, and input string as if you were writing Fortran code using Forgex to perform matching.
+
+For instance, execute the `find` command:
 
 ```shell
 forgex-cli find match lazy-dfa '([a-z]*g+)n?' .match. 'assign'
@@ -29,19 +100,19 @@ If you run it through `fpm run`:
 fpm run --profile release -- find match lazy-dfa '([a-z]*g+)n?' .match. 'assign'
 ```
 
-Output:
+and you will get output similar to the following:
 
 ```
-             pattern: ([a-z]*g+)n?
-                text: 'assign'
-          parse time:        42.9us
-extract literal time:        23.0us
-         runs engine:         T
-    compile nfa time:        26.5us
- dfa initialize time:         4.6us
-         search time:       617.1us
-     matching result:         T
-  memory (estimated):     10324
+                pattern: ([a-z]*g+)n?
+                   text: 'assign'
+             parse time:        42.9μs
+   extract literal time:        23.0μs
+            runs engine:         T
+       compile nfa time:        26.5μs
+    dfa initialize time:         4.6μs
+            search time:       617.1μs
+        matching result:         T
+ automata and tree size:     10324  bytes
 
 ========== Thompson NFA ===========
 state    1: (?, 5)
@@ -65,17 +136,75 @@ state    4A = ( 2 4 5 6 )
 ===================================
 ```
 
+
+#### `debug`
+
+Using `debug` command allows you to obtain information about the abstract syntax tree and the structure of the Thompson NFA.
+
+For example, execute the `debug` command with `ast` subcommand:
+
+```shell
+forgex-cli debug ast 'foo[0-9]+bar'
+```
+
+then, you will get output similar to the following: 
+
+```
+        parse time:       133.8μs
+      extract time:        36.8μs
+ extracted literal:
+  extracted prefix: foo
+  extracted suffix: bar
+         tree size:       848  bytes
+(concatenate (concatenate (concatenate (concatenate (concatenate (concatenate "f" "o") "o") (concatenate [ "0"-"9";] (closure[ "0"-"9";]))) "b") "a") "r")
+```
+
+Note: Notice also that the prefix and suffix literals are now extracted.
+
+
+
+Here's how to get a graph of the NFA. To get the Thompson NFA, run the following command:
+
+```shell
+forgex-cli debug thompson 'foo[0-9]+bar'
+```
+
+This will give you output like this:
+
+```
+        parse time:       144.5μs
+  compile nfa time:        57.0μs
+memory (estimated):     11589
+
+========== Thompson NFA ===========
+state    1: (f, 8)
+state    2: <Accepted>
+state    3: (r, 2)
+state    4: (a, 3)
+state    5: (b, 4)
+state    6: (["0"-"9"], 9)
+state    7: (o, 6)
+state    8: (o, 7)
+state    9: (?, 10)
+state   10: (["0"-"9"], 11)(?, 5)
+state   11: (?, 10)
+
+Note: all segments of NFA were disjoined with overlapping portions.
+===================================
+```
+
 ### Notes
 
+- You can get information about available option flags specifying the `--help` command line argument.
 - If you use this `forgex-cli` command with PowerShell on Windows, use UTF-8 as your system locale to properly input and output Unicode characters.
 
 ## To do
 
 The following features are planned to be implemented in the future:
 
-- [x] Add a CLI tool for debugging and benchmarking
 - [ ] Publish the documentation
 - [ ] Support CMake building
+- [x] Add a CLI tool for debugging and benchmarking
 - [x] Add Time measurement tools (basic)
 
 ## Code Convention
@@ -91,4 +220,4 @@ The command-line interface design of `forgex-cli` was inspired in part by the pa
 1. [rust-lang/regex/regex-cli](https://github.com/rust-lang/regex/tree/master/regex-cli)
 
 ## License
-Forgex is as a freely available under the MIT license. See [LICENSE](https://github.com/ShinobuAmasaki/forgex/blob/main/LICENSE).
+Forgex-CLI is as a freely available under the MIT license. See [LICENSE](https://github.com/ShinobuAmasaki/forgex/blob/main/LICENSE).

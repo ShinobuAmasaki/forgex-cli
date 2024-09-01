@@ -1,238 +1,130 @@
-Forgexは、すべてFortranで書かれた正規表現エンジンです。
+このパッケージは、Fortran Regular Expression (Forgex) を対話的に実行する`forgex-cli`というコマンドラインツールを提供します。
+`forgex-cli`コマンドはもともとForgexの一部として提供されていましたが、Forgexバージョン3.5より、本リポジトリとして
+分離されました。
 
-このプロジェクトは[Fortranパッケージマネージャー](https://fpm.fortran-lang.org/ja/index.html)で管理され、
-正規表現の基本的な処理を提供し、[MITライセンス](https://github.com/ShinobuAmasaki/forgex/blob/main/LICENSE)
-のもとで利用可能なフリーソフトウェアです。
-エンジンの核となるアルゴリズムには決定性有限オートマトン（Deterministic Finite Automaton, DFA）を使用しています。
-この選択は実行時パフォーマンスを重視したものです。
+## 動作確認
 
-## 機能
-
-Forgexが処理を受け付ける正規表現の記法は以下の通りです。
-
-### メタキャラクター
-- `|`  選言（alternation）のバーティカルバー
-- `*`  ゼロ回以上にマッチするアスタリスク
-- `+`  一回以上にマッチするプラス記号
-- `?`  ゼロ回または一回にマッチするクエスチョンマーク
-- `\`  メタキャラクターのエスケープ
-- `.`  任意の一文字にマッチするピリオド
-
-### 文字クラス
-- 文字クラス（例： `[a-z]`）
-- 否定クラス（例: `[^a-z]`）
-- Unicode文字クラス（例: `[α-ωぁ-ん]`）
-
-否定クラスは制御文字にはマッチしないことに注意してください。
-
-### 繰り返し回数の指定
-- `{num}`,
-- `{,max}`,
-- `{min,}`,
-- `{min, max}`,
-ここで `num`と`max`は0（ゼロ）以外の自然数を指定します。
-
-### アンカー
-- `^`, 行頭にマッチ
-- `$`, 行末にマッチ
-
-### 略記法
-- `\t`, タブ文字
-- `\n`, 改行文字 (LFまたはCRLF)
-- `\r`, 復帰文字 (CR)
-- `\s`, 空白文字 (半角スペース, タブ文字, CR, LF, FF, 全角スペース U+3000)
-- `\S`, 非空白文字
-- `\w`, ラテン文字アルファベット、半角数字及びアンダースコア(`[a-zA-Z0-9_]`)
-- `\W`, `\w`の否定クラス(`[^a-zA-Z0-9_]`)
-- `\d`, 半角数字 (`[0-9]`)
-- `\D`, 非半角数字 (`[^0-9]`)
-
-## ドキュメント
-ドキュメントは英語と日本語で次のリンクから利用可能です。
-[https://shinobuamasaki.github.io/forgex](https://shinobuamasaki.github.io/forgex).
-
-## 使用方法
-動作確認は以下のコンパイラーで行っています。
+このソフトウェアの動作は以下のコンパイラで確認されています。
 
 - GNU Fortran (`gfortran`) v13.2.1
 - Intel Fortran Compiler (`ifx`) 2024.0.0 20231017
 
-以下では、ビルドとAPIの使い方について解説しますが、Fortranパッケージマネージャー（`fpm`）を利用することを前提とします。
+Fortran Package Manager(`fpm`)を使用することを前提にしています。
+
+## インストール
+
+### ソースコードの入手
+リポジトリをクローンします。
+
+```shell
+git clone https://github.com/shinobuamasaki/forgex-cli
+```
+
+もしくは最新のソースファイルをダウンロードします。
+
+```shell
+wget https://github.com/ShinobuAmasaki/forgex-cli/archive/refs/tags/v3.5.tar.gz
+```
+この場合は、ダウンロードしたアーカイブファイルを展開します。
+
+```shell
+tar xvzf v3.5.tar.gz
+```
 
 ### ビルド
-まず初めに、あなたのプロジェクトの`fpm.toml`に以下の記述を追加します。
 
-```toml
-[dependencies]
-forgex = {git = "https://github.com/shinobuamasaki/forgex", tag="v2.0"}
+クローン、もしくは展開されたディレクトリに移動します。
+
+```shell
+cd forgex-cli
 ```
 
+Fortran Package Managerの`fpm`コマンドを使用してビルドを実行します。
 
-### APIの使い方
-そのプロジェクトのプログラムのヘッダーに`use forgex`と記述すると、`.in.`と`.match.`の演算子、
-`regex`サブルーチンと`regex_f`関数が導入され、`use`文の有効なスコープでこれらの4つを使用することができます。
-
-```fortran
-program main
-   use :: forgex
-   implicit none
+```shell
+fpm build
 ```
 
-`.in.`演算子は、文字列型を引数にとり、第一引数のパターンが、第二引数の文字列に含まれる場合に真を返します。
+これにより、依存関係が自動的に解決され、Forgexを含む`forgex-cli`がコンパイルされます。
+ビルド後は`fpm run`コマンドを使用して、`forgex-cli`を実行することができます。
 
-```fortran
-block
-   character(:), allocatable :: pattern, str
+PATHの通ったディレクトリにインストールする場合は、`fpm install`を実行してください。
+例えば次のようにします。
 
-   pattern = 'foo(bar|baz)'
-   str = "foobarbaz"
-   print *, pattern .in. str  ! T
-
-   str = "foofoo"
-   print *, pattern .in. str  ! F
-end block
+```shell
+fpm install --prefix /usr/local
 ```
 
-`.match.`演算子は、同様に指定されたパターンが、厳密に文字列と一致する場合に真を返します。
+なお、`fpm build`や`fpm install`では`--profile release`オプションを指定して、最適化オプション等を有効にして
+ビルド及びインストールすることができます。
 
-```fortran
-block
-   character(:), allocatable :: pattern, str
+## 使い方
 
-   pattern = '\d{3}-\d{4}'
-   str = '100-0001'
-   print *, pattern .match. str  ! T
+この記事では、`forgex-cli`コマンドの基本的な使い方について解説します。
+コマンド、サブコマンド、オプションフラグ、出力の読み方等の詳細についてはそれぞれの記事を参照してください。
 
-   str = '1234567'
-   print *, pattern .match. str  ! F
-end block
+### コマンドライン・インターフェイス
+
+現在、`find`と`debug`のコマンドと、以下のサブコマンド等が実行可能です。
+
+```
+forgex-cli
+├── find
+│    └── match
+│         ├── lazy-dfa <pattern> <operator> <input text>
+│         ├── dense <pattern> <operator> <input text>
+│         └── forgex <pattern> <operator> <input text>
+└── debug
+      ├── ast <pattern>
+      └── thompson <pattern>
 ```
 
-`regex`関数は、入力文字列の中でパターンに一致した部分文字列を返します。
+`forgex-cli`のコマンドは次のように実行します
+
 ```
-block
-   character(:), allocatable :: pattern, str, res
-   integer :: length
-
-   pattern = 'foo(bar|baz)'
-   str = 'foobarbaz'
-
-   call regex(pattern, str, res)
-   print *, res                              ! foobar
-
-   ! call regex(pattern, str, res, length)
-        ! the value 6 stored in optional `length` variable.
-
-end block
+forgex-cli <command> <subcommand> ...
+fpm run -- <command> <subcommand> ...
 ```
 
-オプショナル引数の`from`/`to`を使用すると、与えた文字列から添字を指定して部分文字列を切り出すことができます。
-```fortran
-block
-   character(:), allocatable :: pattern, str, res
-   integer :: from, to
+### 使用例
 
-   pattern = '[d-f]{3}'
-   str = 'abcdefghi'
+#### `find`コマンド
 
-   call regex(pattern, str, res, from=from, to=to)
-   print *, res                   ! def
+`find`コマンドと`match`サブコマンドを使用すると、エンジンを指定して、`.in.`と`.match.`演算子を用いた正規表現マッチングのベンチマークテストを実行することができます。
 
-   ! The `from` and `to` variables store the indices of the start and end points
-   ! of the matched part of the string `str`, respectively.
+サブコマンドの後ろに、以下のエンジンのいずれかを指定します。
+- `lazy-dfa`
+- `dense`
+- `forgex`
 
-   ! Cut out before the matched part.
-   print *, str(1:from-1)        ! abc
-
-   ! Cut out the matched part that equivalent to the result of the `regex` function.
-   print *, str(from:to)         ! def
-
-   ! Cut out after the matched part.
-   print *, str(to+1:len(str))   ! ghi
-
-end block
-```
-
-`regex`関数の宣言部（インタフェース）は次の通りです。
-```fortran
-interface regex
-   module procedure :: subroutine__regex
-end interface
-
-pure subroutine subroutine__regex(pattern, text, res, length, from, to)
-   implicit none
-   character(*),              intent(in)    :: pattern, text
-   character(:), allocatable, intent(inout) :: res
-   integer,      optional,    intent(inout) :: length, from, to
-```
-
-マッチした文字列を関数の戻り値として得たい場合には、`regex_f`関数を使用してください。
-
-```fortran
-interface regex_f
-   module procedure :: function__regex
-end interface regex_f
-
-pure function function__regex(pattern, text) result(res)
-   implicit none
-   character(*), intent(in)  :: pattern, text
-   character(:), allocatable :: res
-```
-
-#### UTF-8文字列のマッチング
-
-UTF-8の文字列についても、ASCII文字と同様に正規表現のパターンで一致させることができます。
-以下の例は、漢文の一節に対してマッチングを試みています。
-
-```fortran
-block
-   character(:), allocatable :: pattern, str
-   integer :: length
-
-   pattern = "夢.{1,7}胡蝶"
-   str = "昔者莊周夢爲胡蝶　栩栩然胡蝶也"
-
-   print *, pattern .in. str            ! T
-   call regex(pattern, str, res, length)
-   print *, res                         ! 夢爲胡蝶　栩栩然胡蝶
-   print *, length                      ! 30 (is 3-byte * 10 characters)
-
-end block
-```
-
-この例では`length`変数にバイト長が格納され、この場合は10個の3バイト文字に一致したので、その長さは30となります。
-
-
-### CLIツール
-
-バージョン3.2以降では、Forgexエンジンを使用したコマンドラインツール`forgex-cli`が提供されてり、Forgexエンジン自体のデバッグ、正規表現マッチングのテストやベンチマークのために使用することができます。
-以下のようにコマンドを実行することで、標準出力に結果を得ることができます。
-[使い方の詳細についてはドキュメンテーションを参照してください。](https://shinobuamasaki.github.io/forgex/page/Japanese/forgex_on_command_line_ja.html)
-
-コマンド:
+さらにその後ろには、正規表現パターン、演算子、入力テキストの順に、Forgexを使ってFortranコードを書くのと同じように指定します。
+例えば、次のようになります。
 
 ```shell
 forgex-cli find match lazy-dfa '([a-z]*g+)n?' .match. 'assign'
 ```
 
-`fpm run`経由で実行する場合:
+もしくは、`fpm run`を介して実行することもできます。
 
 ```shell
-fpm run forgex-cli --profile release -- find match lazy-dfa '([a-z]*g+)n?' .match. 'assign'
+fpm run -- find match lazy-dfa '([a-z]*g+)n?' .match. 'assign'
 ```
 
-出力:
+いずれかを実行すると、以下のような実行結果が得られます。
+
 <div class="none-highlight-user">
 
 ```
-            pattern: ([a-z]*g+)n?
-               text: 'assign'
-         parse time:        46.5us
-   compile nfa time:        74.9us
-dfa initialize time:        78.4us
-        search time:       661.7us
-    matching result:         T
- memory (estimated):     10380
+                pattern: ([a-z]*g+)n?
+                   text: 'assign'
+             parse time:        42.9μs
+   extract literal time:        23.0μs
+            runs engine:         T
+       compile nfa time:        26.5μs
+    dfa initialize time:         4.6μs
+            search time:       617.1μs
+        matching result:         T
+ automata and tree size:     10324  bytes
 
 ========== Thompson NFA ===========
 state    1: (?, 5)
@@ -258,40 +150,83 @@ state    4A = ( 2 4 5 6 )
 
 </div>
 
+#### `debug`コマンド
+
+`debug`コマンドを使用すると、正規表現から構築された抽象構文木（AST）や非決定性有限オートマトン（NFA）の情報を得ることができます。
+
+例えば、`debug`コマンドと`ast`サブコマンドに、正規表現パターン`foo[0-9]+bar`を与えて実行します。
+
+```shell
+forgex-cli debug ast 'foo[0-9]+bar'
+```
+
+そうすると、以下のように出力され、ASTの構造を知ることができます。
+
+<div class="none-highlight-user">
+
+```
+        parse time:       133.8μs
+      extract time:        36.8μs
+ extracted literal:
+  extracted prefix: foo
+  extracted suffix: bar
+memory (estimated):       848
+(concatenate (concatenate (concatenate (concatenate (concatenate (concatenate "f" "o") "o") (concatenate [ "0"-"9";] (closure[ "0"-"9";]))) "b") "a") "r")
+```
+
+</div>
+
+次にNFAの情報を得るには、`debug`コマンドと`thompson`サブコマンドを指定して、パターンを与えます。
+
+```shell
+forgex-cli debug thompson 'foo[0-9]+bar'
+```
+
+このコマンドの出力は、次のようになります。
+
+```
+        parse time:       144.5μs
+  compile nfa time:        57.0μs
+memory (estimated):     11589
+
+========== Thompson NFA ===========
+state    1: (f, 8)
+state    2: <Accepted>
+state    3: (r, 2)
+state    4: (a, 3)
+state    5: (b, 4)
+state    6: (["0"-"9"], 9)
+state    7: (o, 6)
+state    8: (o, 7)
+state    9: (?, 10)
+state   10: (["0"-"9"], 11)(?, 5)
+state   11: (?, 10)
+
+Note: all segments of NFA were disjoined with overlapping portions.
+===================================
+```
+
 ### 注意
 
-- WindowおよびmacOS環境の`gfortran`でコンパイルされたプログラムでは、OpenMPの並列ブロックの中で割り付け可能文字列型変数を使用すると、セグメンテーション違反などでプログラムが停止する可能性があります。
+- コマンドライン引数に`--help`を指定すると、使用可能なオプションフラグに関する情報を取得できます。
 - コマンドラインツール`forgex-cli`をWindows上のPowerShellで利用する場合、Unicode文字を正しく入出力するには、システムのロケールをUTF-8に変更する必要があります。
 
 ## To Do
-- Unicodeエスケープシーケンス`\p{...}`の追加
-- UTF-8において無効なバイトストリームへの対処
-- ✅️ リテラル検索によるマッチングの最適化
+
+- ドキュメントの公開
+- CMakeによるビルドのサポート
 - ✅️ デバッグおよびベンチマーク用のCLIツールを追加
-- ✅️ すべてのAPI演算子に`pure elemental`属性を追加
-- ✅️ ドキュメントの公開
-- ✅️ UTF-8文字の基本的なサポート
-- ✅️ On-the-FlyのDFA構築
-- ✅️ CMakeによるビルドのサポート
 - ✅️ 簡単な時間計測ツールの追加
-- <s>マッチングの並列化</s>
 
 ## コーディング規約
 本プロジェクトに含まれるすべてのコードは、3スペースのインデントで記述されます。
 
 ## 謝辞
-冪集合構成法のアルゴリズムと構文解析については、Russ Cox氏の論文と近藤嘉雪氏の本を参考にしました。
-優先度付きキューの実装は、[ue1221さんのコード](https://github.com/ue1221/fortran-utilities)に基づいています。
-文字列に対して`.in.`演算子を適用するというアイデアは、soybeanさんのものにインスパイアされました。
 `forgex-cli`のコマンドラインインターフェイスの設計については、Rust言語の`regex-cli`を参考にしました。
 
 ## 参考文献
-1. Russ Cox ["Regular Expression Matching Can Be Simple And Fast"](https://swtch.com/~rsc/regexp/regexp1.html), 2007年
-2. 近藤嘉雪, "定本 Cプログラマのためのアルゴリズムとデータ構造", 1998年, SB Creative.
-3. [ue1221/fortran-utilities](https://github.com/ue1221/fortran-utilities)
-4. [kazulagi, @soybean](https://github.com/kazulagi), [Fortranでユーザー定義演算子.in.を作る - Qiita.com](https://qiita.com/soybean/items/7cdd2156a9d8843c0d91), 2022年
-5. [rust-lang/regex/regex-cli](https://github.com/rust-lang/regex/tree/master/regex-cli)
+1. [rust-lang/regex/regex-cli](https://github.com/rust-lang/regex/tree/master/regex-cli)
 
 ## ライセンス
 このプロジェクトはMITライセンスで提供されるフリーソフトウェアです
-（cf. [LICENSE](https://github.com/ShinobuAmasaki/forgex/blob/main/LICENSE)）。
+（cf. [LICENSE](https://github.com/ShinobuAmasaki/forgex-cli/blob/main/LICENSE)）。
