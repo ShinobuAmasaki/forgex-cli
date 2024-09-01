@@ -2,6 +2,17 @@
 
 This package provides a command line tool which named `forgex-cli` for interacting with [Forgex—Fortran Regular Expression](https://github.com/ShinobuAmasaki/forgex).
 The `forgex-cli` command was originally part of Forgex package, but was moved to this separate repository starting with Forgex version 3.5.
+This command uses Forgex engine to provide the information needed for testing, debugging, and benchmarking.
+
+
+## Operation Check
+
+Operation of this command has been confirmed with the following compilers:
+
+- GNU Fortran (`gfortran`) v13.2.1
+- Intel Fortran Compiler (`ifx`) 2024.0.0 20231017
+
+It is assumed that you will use the Fortran Package Manager(`fpm`).
 
 ## Installation
 
@@ -39,17 +50,7 @@ Execute building with Fortran Package Manager (`fpm`):
 fpm build
 ```
 
-This will automatically resolve the dependency and compile `forgex-cli`, including `forgex`.
-
-
-## Operation Check
-
-Operation of this command has been confirmed with the following compilers:
-
-- GNU Fortran (`gfortran`) v13.2.1
-- Intel Fortran Compiler (`ifx`) 2024.0.0 20231017
-
-It is assumed that you will use the Fortran Package Manager(`fpm`).
+This will automatically resolve the dependency, and then compile the `forgex-cli` command and the `forgex` library.
 
 ## Usage
 
@@ -207,7 +208,7 @@ Note: all segments of NFA were disjoined with overlapping portions.
 The following features are planned to be implemented in the future:
 
 - [ ] Publish the documentation
-- [ ] Support CMake building
+- [ ] Support building with CMake
 - [x] Add a CLI tool for debugging and benchmarking
 - [x] Add Time measurement tools (basic)
 
