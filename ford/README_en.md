@@ -1,4 +1,5 @@
-This package provides a command line tool which named `forgex-cli` for interacting with Forgex—Fortran Regular Expression. The `forgex-cli` command was originally part of Forgex package, but was moved to this separate repository starting with Forgex version 3.5.
+This package provides a command line tool which named `forgex-cli` for interacting with [Forgex—Fortran Regular Expression](https://github.com/ShinobuAmasaki/forgex).
+The `forgex-cli` command was originally part of Forgex package, but was moved to this separate repository starting with Forgex version 3.5.
 
 ## Installation
 
@@ -50,7 +51,8 @@ It is assumed that you will use the Fortran Package Manager(`fpm`).
 
 ## Usage
 
-This article describe basic usage. [Please refer to each article in the documentation](https://shinobuamasaki.github.io/forgex-cli/page/index.html) for detailed information on commands, subcommands, option flags, and displaying results.
+This article describes basic usage of `forgex-cli`.
+ <!-- [Please refer to each article in the documentation](https://shinobuamasaki.github.io/forgex-cli/page/index.html) for detailed information on commands, subcommands, option flags, and displaying results. -->
 
 ### Command Line Interface
 
@@ -58,11 +60,11 @@ Currently, commands `find` and `debug`,  and following subcommands and sub-subco
 
 ```
 forgex-cli
-├──find
-│  └── match
-│      ├── lazy-dfa <pattern> <operator> <input text>
-│      ├── dense <pattern> <operator> <input text>
-│      └── forgex <pattern> <operator> <input text>
+├── find
+│   └── match
+│       ├── lazy-dfa <pattern> <operator> <input text>
+│       ├── dense <pattern> <operator> <input text>
+│       └── forgex <pattern> <operator> <input text>
 └── debug
     ├── ast <pattern>
     └── thompson <pattern>
