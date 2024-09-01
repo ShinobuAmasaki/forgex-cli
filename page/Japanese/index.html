@@ -6,11 +6,11 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-      <meta name="description" content="A Fortran regular expresion engine.">
+      <meta name="description" content="Fortran Regular Expression Command Line Tool">
     <meta name="author" content="Amasaki Shinobu" >
     <link rel="icon" href="../../favicon.png">
 
-    <title>Japanese/日本語 &ndash; Forgex—Fortran Regular Expression</title>
+    <title>Japanese/日本語 &ndash; Forgex-CLI</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
@@ -30,7 +30,7 @@
     <div class="container-fluid mb-sm-4 mb-xl-2">
       <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
         <div class="container">
-          <a class="navbar-brand" href="../../index.html">Forgex—Fortran Regular Expression </a>
+          <a class="navbar-brand" href="../../index.html">Forgex-CLI </a>
           <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar"
                   aria-expanded="false" aria-controls="navbar" aria-label="Toggle navigation">
                   <span class="navbar-toggler-icon">
@@ -70,7 +70,7 @@
         <div class="col">
           <ul class="list-inline" style="margin-bottom:0px; display:inline">
               <li class="list-inline-item" id="author"><i class="fa fa-pencil"></i> 雨崎しのぶ</li>
-              <li class="list-inline-item" id="date"><i class="fa fa-calendar-o"></i> 2024-07-12</li>
+              <li class="list-inline-item" id="date"><i class="fa fa-calendar-o"></i> 2024-09-01</li>
           </ul>
         </div>
         <div class="col">
@@ -95,232 +95,107 @@
           </ul>
           <hr>
           <nav class="nav nav-pills flex-column">
-              <a class="nav-link" href="../English/index.html">English</a>
-                <nav class="nav nav-pills flex-column">
-                                <a class="nav-link" href="../English/forgex_on_command_line_en.html">CLI Tool</a>
-              <a class="nav-link" href="../English/terms_related_to_forgex_en.html">Terms related to Forgex</a>
-
-                </nav>
+              <a class="nav-link" href="../English/index.html">English/英語</a>
               <a class="nav-link active disabled" href="index.html">Japanese/日本語</a>
-                <nav class="nav nav-pills flex-column">
-                                <a class="nav-link" href="forgex_on_command_line_ja.html">CLIツール</a>
-              <a class="nav-link" href="terms_of_forgex_ja.html">Forgexの用語</a>
-
-                </nav>
           </nav>
         </div>
       </div>
 
     <div class="col-9" id='text'>
-      <h1>Readme</h1>
-<p>Forgexは、すべてFortranで書かれた正規表現エンジンです。</p>
-<p>このプロジェクトは<a href="https://fpm.fortran-lang.org/ja/index.html">Fortranパッケージマネージャー</a>で管理され、
-正規表現の基本的な処理を提供し、<a href="https://github.com/ShinobuAmasaki/forgex/blob/main/LICENSE">MITライセンス</a>
-のもとで利用可能なフリーソフトウェアです。
-エンジンの核となるアルゴリズムには決定性有限オートマトン（Deterministic Finite Automaton, DFA）を使用しています。
-この選択は実行時パフォーマンスを重視したものです。</p>
-<h2>機能</h2>
-<p>Forgexが処理を受け付ける正規表現の記法は以下の通りです。</p>
-<h3>メタキャラクター</h3>
-<ul>
-<li><code>|</code>  選言（alternation）のバーティカルバー</li>
-<li><code>*</code>  ゼロ回以上にマッチするアスタリスク</li>
-<li><code>+</code>  一回以上にマッチするプラス記号</li>
-<li><code>?</code>  ゼロ回または一回にマッチするクエスチョンマーク</li>
-<li><code>\</code>  メタキャラクターのエスケープ</li>
-<li><code>.</code>  任意の一文字にマッチするピリオド</li>
-</ul>
-<h3>文字クラス</h3>
-<ul>
-<li>文字クラス（例： <code>[a-z]</code>）</li>
-<li>否定クラス（例: <code>[^a-z]</code>）</li>
-<li>Unicode文字クラス（例: <code>[α-ωぁ-ん]</code>）</li>
-</ul>
-<p>否定クラスは制御文字にはマッチしないことに注意してください。</p>
-<h3>繰り返し回数の指定</h3>
-<ul>
-<li><code>{num}</code>,</li>
-<li><code>{,max}</code>,</li>
-<li><code>{min,}</code>,</li>
-<li><code>{min, max}</code>,
-ここで <code>num</code>と<code>max</code>は0（ゼロ）以外の自然数を指定します。</li>
-</ul>
-<h3>アンカー</h3>
-<ul>
-<li><code>^</code>, 行頭にマッチ</li>
-<li><code>$</code>, 行末にマッチ</li>
-</ul>
-<h3>略記法</h3>
-<ul>
-<li><code>\t</code>, タブ文字</li>
-<li><code>\n</code>, 改行文字 (LFまたはCRLF)</li>
-<li><code>\r</code>, 復帰文字 (CR)</li>
-<li><code>\s</code>, 空白文字 (半角スペース, タブ文字, CR, LF, FF, 全角スペース U+3000)</li>
-<li><code>\S</code>, 非空白文字</li>
-<li><code>\w</code>, ラテン文字アルファベット、半角数字及びアンダースコア(<code>[a-zA-Z0-9_]</code>)</li>
-<li><code>\W</code>, <code>\w</code>の否定クラス(<code>[^a-zA-Z0-9_]</code>)</li>
-<li><code>\d</code>, 半角数字 (<code>[0-9]</code>)</li>
-<li><code>\D</code>, 非半角数字 (<code>[^0-9]</code>)</li>
-</ul>
-<h2>ドキュメント</h2>
-<p>ドキュメントは英語と日本語で次のリンクから利用可能です。
-<a href="https://shinobuamasaki.github.io/forgex">https://shinobuamasaki.github.io/forgex</a>.</p>
-<h2>使用方法</h2>
-<p>動作確認は以下のコンパイラーで行っています。</p>
+      <h1>README</h1>
+<p>このパッケージは、Fortran Regular Expression (Forgex) を対話的に実行する<code>forgex-cli</code>というコマンドラインツールを提供します。
+<code>forgex-cli</code>コマンドはもともとForgexの一部として提供されていましたが、Forgexバージョン3.5より、本リポジトリとして
+分離されました。</p>
+<h2>動作確認</h2>
+<p>このソフトウェアの動作は以下のコンパイラで確認されています。</p>
 <ul>
 <li>GNU Fortran (<code>gfortran</code>) v13.2.1</li>
 <li>Intel Fortran Compiler (<code>ifx</code>) 2024.0.0 20231017</li>
 </ul>
-<p>以下では、ビルドとAPIの使い方について解説しますが、Fortranパッケージマネージャー（<code>fpm</code>）を利用することを前提とします。</p>
+<p>Fortran Package Manager(<code>fpm</code>)を使用することを前提にしています。</p>
+<h2>インストール</h2>
+<h3>ソースコードの入手</h3>
+<p>リポジトリをクローンします。</p>
+<div class="codehilite"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/shinobuamasaki/forgex-cli
+</code></pre></div>
+
+<p>もしくは最新のソースファイルをダウンロードします。</p>
+<div class="codehilite"><pre><span></span><code>wget<span class="w"> </span>https://github.com/ShinobuAmasaki/forgex-cli/archive/refs/tags/v3.5.tar.gz
+</code></pre></div>
+
+<p>この場合は、ダウンロードしたアーカイブファイルを展開します。</p>
+<div class="codehilite"><pre><span></span><code>tar<span class="w"> </span>xvzf<span class="w"> </span>v3.5.tar.gz
+</code></pre></div>
+
 <h3>ビルド</h3>
-<p>まず初めに、あなたのプロジェクトの<code>fpm.toml</code>に以下の記述を追加します。</p>
-<div class="codehilite"><pre><span></span><code><span class="k">[dependencies]</span>
-<span class="n">forgex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">git</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;https://github.com/shinobuamasaki/forgex&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">tag</span><span class="p">=</span><span class="s2">&quot;v2.0&quot;</span><span class="p">}</span>
+<p>クローン、もしくは展開されたディレクトリに移動します。</p>
+<div class="codehilite"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>forgex-cli
 </code></pre></div>
 
-<h3>APIの使い方</h3>
-<p>そのプロジェクトのプログラムのヘッダーに<code>use forgex</code>と記述すると、<code>.in.</code>と<code>.match.</code>の演算子、
-<code>regex</code>サブルーチンと<code>regex_f</code>関数が導入され、<code>use</code>文の有効なスコープでこれらの4つを使用することができます。</p>
-<div class="codehilite"><pre><span></span><code><span class="k">program </span><span class="n">main</span>
-<span class="w">   </span><span class="k">use</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">forgex</span>
-<span class="w">   </span><span class="k">implicit none</span>
+<p>Fortran Package Managerの<code>fpm</code>コマンドを使用してビルドを実行します。</p>
+<div class="codehilite"><pre><span></span><code>fpm<span class="w"> </span>build
 </code></pre></div>
 
-<p><code>.in.</code>演算子は、文字列型を引数にとり、第一引数のパターンが、第二引数の文字列に含まれる場合に真を返します。</p>
-<div class="codehilite"><pre><span></span><code><span class="k">block</span>
-<span class="k">   </span><span class="kt">character</span><span class="p">(:),</span><span class="w"> </span><span class="k">allocatable</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">pattern</span><span class="p">,</span><span class="w"> </span><span class="n">str</span>
-
-<span class="w">   </span><span class="n">pattern</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;foo(bar|baz)&#39;</span>
-<span class="w">   </span><span class="n">str</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;foobarbaz&quot;</span>
-<span class="w">   </span><span class="k">print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">pattern</span><span class="w"> </span><span class="p">.</span><span class="n">in</span><span class="p">.</span><span class="w"> </span><span class="n">str</span><span class="w">  </span><span class="c">! T</span>
-
-<span class="w">   </span><span class="n">str</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;foofoo&quot;</span>
-<span class="w">   </span><span class="k">print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">pattern</span><span class="w"> </span><span class="p">.</span><span class="n">in</span><span class="p">.</span><span class="w"> </span><span class="n">str</span><span class="w">  </span><span class="c">! F</span>
-<span class="k">end block</span>
+<p>これにより、依存関係が自動的に解決され、Forgexを含む<code>forgex-cli</code>がコンパイルされます。
+ビルド後は<code>fpm run</code>コマンドを使用して、<code>forgex-cli</code>を実行することができます。</p>
+<p>PATHの通ったディレクトリにインストールする場合は、<code>fpm install</code>を実行してください。
+例えば次のようにします。</p>
+<div class="codehilite"><pre><span></span><code>fpm<span class="w"> </span>install<span class="w"> </span>--prefix<span class="w"> </span>/usr/local
 </code></pre></div>
 
-<p><code>.match.</code>演算子は、同様に指定されたパターンが、厳密に文字列と一致する場合に真を返します。</p>
-<div class="codehilite"><pre><span></span><code><span class="k">block</span>
-<span class="k">   </span><span class="kt">character</span><span class="p">(:),</span><span class="w"> </span><span class="k">allocatable</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">pattern</span><span class="p">,</span><span class="w"> </span><span class="n">str</span>
-
-<span class="w">   </span><span class="n">pattern</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;\d{3}-\d{4}&#39;</span>
-<span class="w">   </span><span class="n">str</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;100-0001&#39;</span>
-<span class="w">   </span><span class="k">print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">pattern</span><span class="w"> </span><span class="p">.</span><span class="n">match</span><span class="p">.</span><span class="w"> </span><span class="n">str</span><span class="w">  </span><span class="c">! T</span>
-
-<span class="w">   </span><span class="n">str</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;1234567&#39;</span>
-<span class="w">   </span><span class="k">print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">pattern</span><span class="w"> </span><span class="p">.</span><span class="n">match</span><span class="p">.</span><span class="w"> </span><span class="n">str</span><span class="w">  </span><span class="c">! F</span>
-<span class="k">end block</span>
+<p>なお、<code>fpm build</code>や<code>fpm install</code>では<code>--profile release</code>オプションを指定して、最適化オプション等を有効にして
+ビルド及びインストールすることができます。</p>
+<h2>使い方</h2>
+<p>この記事では、<code>forgex-cli</code>コマンドの基本的な使い方について解説します。
+コマンド、サブコマンド、オプションフラグ、出力の読み方等の詳細についてはそれぞれの記事を参照してください。</p>
+<h3>コマンドライン・インターフェイス</h3>
+<p>現在、<code>find</code>と<code>debug</code>のコマンドと、以下のサブコマンド等が実行可能です。</p>
+<div class="codehilite"><pre><span></span><code>forgex-cli
+├── find
+│    └── match
+│         ├── lazy-dfa &lt;pattern&gt; &lt;operator&gt; &lt;input text&gt;
+│         ├── dense &lt;pattern&gt; &lt;operator&gt; &lt;input text&gt;
+│         └── forgex &lt;pattern&gt; &lt;operator&gt; &lt;input text&gt;
+└── debug
+      ├── ast &lt;pattern&gt;
+      └── thompson &lt;pattern&gt;
 </code></pre></div>
 
-<p><code>regex</code>関数は、入力文字列の中でパターンに一致した部分文字列を返します。</p>
-<div class="codehilite"><pre><span></span><code><span class="k">block</span>
-<span class="w">   </span><span class="k">character</span><span class="p">(</span><span class="o">:</span><span class="p">),</span><span class="w"> </span><span class="n">allocatable</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="n">pattern</span><span class="p">,</span><span class="w"> </span><span class="n">str</span><span class="p">,</span><span class="w"> </span><span class="n">res</span>
-<span class="w">   </span><span class="kt">integer</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="n">length</span>
-
-<span class="w">   </span><span class="n">pattern</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;foo(bar|baz)&#39;</span>
-<span class="w">   </span><span class="n">str</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;foobarbaz&#39;</span>
-
-<span class="w">   </span><span class="k">call</span><span class="w"> </span><span class="n">regex</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span><span class="w"> </span><span class="n">str</span><span class="p">,</span><span class="w"> </span><span class="n">res</span><span class="p">)</span>
-<span class="w">   </span><span class="n">print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">res</span><span class="w">                              </span><span class="o">!</span><span class="w"> </span><span class="n">foobar</span>
-
-<span class="w">   </span><span class="o">!</span><span class="w"> </span><span class="k">call</span><span class="w"> </span><span class="n">regex</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span><span class="w"> </span><span class="n">str</span><span class="p">,</span><span class="w"> </span><span class="n">res</span><span class="p">,</span><span class="w"> </span><span class="n">length</span><span class="p">)</span>
-<span class="w">        </span><span class="o">!</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">value</span><span class="w"> </span><span class="mi">6</span><span class="w"> </span><span class="k">stored</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">optional</span><span class="w"> </span><span class="n n-Quoted">`length`</span><span class="w"> </span><span class="n">variable</span><span class="p">.</span>
-
-<span class="k">end</span><span class="w"> </span><span class="k">block</span>
+<p><code>forgex-cli</code>のコマンドは次のように実行します</p>
+<div class="codehilite"><pre><span></span><code>forgex-cli &lt;command&gt; &lt;subcommand&gt; ...
+fpm run -- &lt;command&gt; &lt;subcommand&gt; ...
 </code></pre></div>
 
-<p>オプショナル引数の<code>from</code>/<code>to</code>を使用すると、与えた文字列から添字を指定して部分文字列を切り出すことができます。</p>
-<div class="codehilite"><pre><span></span><code><span class="k">block</span>
-<span class="k">   </span><span class="kt">character</span><span class="p">(:),</span><span class="w"> </span><span class="k">allocatable</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">pattern</span><span class="p">,</span><span class="w"> </span><span class="n">str</span><span class="p">,</span><span class="w"> </span><span class="n">res</span>
-<span class="w">   </span><span class="kt">integer</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">from</span><span class="p">,</span><span class="w"> </span><span class="n">to</span>
-
-<span class="w">   </span><span class="n">pattern</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;[d-f]{3}&#39;</span>
-<span class="w">   </span><span class="n">str</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;abcdefghi&#39;</span>
-
-<span class="w">   </span><span class="k">call </span><span class="n">regex</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span><span class="w"> </span><span class="n">str</span><span class="p">,</span><span class="w"> </span><span class="n">res</span><span class="p">,</span><span class="w"> </span><span class="n">from</span><span class="o">=</span><span class="n">from</span><span class="p">,</span><span class="w"> </span><span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
-<span class="w">   </span><span class="k">print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">res</span><span class="w">                   </span><span class="c">! def</span>
-
-<span class="w">   </span><span class="c">! The `from` and `to` variables store the indices of the start and end points</span>
-<span class="w">   </span><span class="c">! of the matched part of the string `str`, respectively.</span>
-
-<span class="w">   </span><span class="c">! Cut out before the matched part.</span>
-<span class="w">   </span><span class="k">print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">str</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">from</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="w">        </span><span class="c">! abc</span>
-
-<span class="w">   </span><span class="c">! Cut out the matched part that equivalent to the result of the `regex` function.</span>
-<span class="w">   </span><span class="k">print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">str</span><span class="p">(</span><span class="n">from</span><span class="p">:</span><span class="n">to</span><span class="p">)</span><span class="w">         </span><span class="c">! def</span>
-
-<span class="w">   </span><span class="c">! Cut out after the matched part.</span>
-<span class="w">   </span><span class="k">print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">str</span><span class="p">(</span><span class="n">to</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">str</span><span class="p">))</span><span class="w">   </span><span class="c">! ghi</span>
-
-<span class="k">end block</span>
-</code></pre></div>
-
-<p><code>regex</code>関数の宣言部（インタフェース）は次の通りです。</p>
-<div class="codehilite"><pre><span></span><code><span class="k">interface </span><span class="n">regex</span>
-<span class="w">   </span><span class="k">module procedure</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">subroutine__regex</span>
-<span class="k">end interface</span>
-
-<span class="k">pure subroutine </span><span class="n">subroutine__regex</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span><span class="w"> </span><span class="n">text</span><span class="p">,</span><span class="w"> </span><span class="n">res</span><span class="p">,</span><span class="w"> </span><span class="n">length</span><span class="p">,</span><span class="w"> </span><span class="n">from</span><span class="p">,</span><span class="w"> </span><span class="n">to</span><span class="p">)</span>
-<span class="w">   </span><span class="k">implicit none</span>
-<span class="k">   </span><span class="kt">character</span><span class="p">(</span><span class="o">*</span><span class="p">),</span><span class="w">              </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">pattern</span><span class="p">,</span><span class="w"> </span><span class="n">text</span>
-<span class="w">   </span><span class="kt">character</span><span class="p">(:),</span><span class="w"> </span><span class="k">allocatable</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">res</span>
-<span class="w">   </span><span class="kt">integer</span><span class="p">,</span><span class="w">      </span><span class="k">optional</span><span class="p">,</span><span class="w">    </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">length</span><span class="p">,</span><span class="w"> </span><span class="n">from</span><span class="p">,</span><span class="w"> </span><span class="n">to</span>
-</code></pre></div>
-
-<p>マッチした文字列を関数の戻り値として得たい場合には、<code>regex_f</code>関数を使用してください。</p>
-<div class="codehilite"><pre><span></span><code><span class="k">interface </span><span class="n">regex_f</span>
-<span class="w">   </span><span class="k">module procedure</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">function__regex</span>
-<span class="k">end interface </span><span class="n">regex_f</span>
-
-<span class="k">pure function </span><span class="n">function__regex</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span><span class="w"> </span><span class="n">text</span><span class="p">)</span><span class="w"> </span><span class="k">result</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
-<span class="w">   </span><span class="k">implicit none</span>
-<span class="k">   </span><span class="kt">character</span><span class="p">(</span><span class="o">*</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">  </span><span class="kd">::</span><span class="w"> </span><span class="n">pattern</span><span class="p">,</span><span class="w"> </span><span class="n">text</span>
-<span class="w">   </span><span class="kt">character</span><span class="p">(:),</span><span class="w"> </span><span class="k">allocatable</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">res</span>
-</code></pre></div>
-
-<h4>UTF-8文字列のマッチング</h4>
-<p>UTF-8の文字列についても、ASCII文字と同様に正規表現のパターンで一致させることができます。
-以下の例は、漢文の一節に対してマッチングを試みています。</p>
-<div class="codehilite"><pre><span></span><code><span class="k">block</span>
-<span class="k">   </span><span class="kt">character</span><span class="p">(:),</span><span class="w"> </span><span class="k">allocatable</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">pattern</span><span class="p">,</span><span class="w"> </span><span class="n">str</span>
-<span class="w">   </span><span class="kt">integer</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">length</span>
-
-<span class="w">   </span><span class="n">pattern</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;夢.{1,7}胡蝶&quot;</span>
-<span class="w">   </span><span class="n">str</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;昔者莊周夢爲胡蝶　栩栩然胡蝶也&quot;</span>
-
-<span class="w">   </span><span class="k">print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">pattern</span><span class="w"> </span><span class="p">.</span><span class="n">in</span><span class="p">.</span><span class="w"> </span><span class="n">str</span><span class="w">            </span><span class="c">! T</span>
-<span class="w">   </span><span class="k">call </span><span class="n">regex</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span><span class="w"> </span><span class="n">str</span><span class="p">,</span><span class="w"> </span><span class="n">res</span><span class="p">,</span><span class="w"> </span><span class="n">length</span><span class="p">)</span>
-<span class="w">   </span><span class="k">print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">res</span><span class="w">                         </span><span class="c">! 夢爲胡蝶　栩栩然胡蝶</span>
-<span class="w">   </span><span class="k">print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">length</span><span class="w">                      </span><span class="c">! 30 (is 3-byte * 10 characters)</span>
-
-<span class="k">end block</span>
-</code></pre></div>
-
-<p>この例では<code>length</code>変数にバイト長が格納され、この場合は10個の3バイト文字に一致したので、その長さは30となります。</p>
-<h3>CLIツール</h3>
-<p>バージョン3.2以降では、Forgexエンジンを使用したコマンドラインツール<code>forgex-cli</code>が提供されてり、Forgexエンジン自体のデバッグ、正規表現マッチングのテストやベンチマークのために使用することができます。
-以下のようにコマンドを実行することで、標準出力に結果を得ることができます。
-<a href="https://shinobuamasaki.github.io/forgex/page/Japanese/forgex_on_command_line_ja.html">使い方の詳細についてはドキュメンテーションを参照してください。</a></p>
-<p>コマンド:</p>
+<h3>使用例</h3>
+<h4><code>find</code>コマンド</h4>
+<p><code>find</code>コマンドと<code>match</code>サブコマンドを使用すると、エンジンを指定して、<code>.in.</code>と<code>.match.</code>演算子を用いた正規表現マッチングのベンチマークテストを実行することができます。</p>
+<p>サブコマンドの後ろに、以下のエンジンのいずれかを指定します。
+- <code>lazy-dfa</code>
+- <code>dense</code>
+- <code>forgex</code></p>
+<p>さらにその後ろには、正規表現パターン、演算子、入力テキストの順に、Forgexを使ってFortranコードを書くのと同じように指定します。
+例えば、次のようになります。</p>
 <div class="codehilite"><pre><span></span><code>forgex-cli<span class="w"> </span>find<span class="w"> </span>match<span class="w"> </span>lazy-dfa<span class="w"> </span><span class="s1">&#39;([a-z]*g+)n?&#39;</span><span class="w"> </span>.match.<span class="w"> </span><span class="s1">&#39;assign&#39;</span>
 </code></pre></div>
 
-<p><code>fpm run</code>経由で実行する場合:</p>
-<div class="codehilite"><pre><span></span><code>fpm<span class="w"> </span>run<span class="w"> </span>forgex-cli<span class="w"> </span>--profile<span class="w"> </span>release<span class="w"> </span>--<span class="w"> </span>find<span class="w"> </span>match<span class="w"> </span>lazy-dfa<span class="w"> </span><span class="s1">&#39;([a-z]*g+)n?&#39;</span><span class="w"> </span>.match.<span class="w"> </span><span class="s1">&#39;assign&#39;</span>
+<p>もしくは、<code>fpm run</code>を介して実行することもできます。</p>
+<div class="codehilite"><pre><span></span><code>fpm<span class="w"> </span>run<span class="w"> </span>--<span class="w"> </span>find<span class="w"> </span>match<span class="w"> </span>lazy-dfa<span class="w"> </span><span class="s1">&#39;([a-z]*g+)n?&#39;</span><span class="w"> </span>.match.<span class="w"> </span><span class="s1">&#39;assign&#39;</span>
 </code></pre></div>
 
-<p>出力:</p>
+<p>いずれかを実行すると、以下のような実行結果が得られます。</p>
 <div class="none-highlight-user">
 
 
-<div class="codehilite"><pre><span></span><code><span class="w">            </span><span class="nl">pattern:</span><span class="w"> </span><span class="p">([</span><span class="n">a</span><span class="o">-</span><span class="n">z</span><span class="p">]</span><span class="o">*</span><span class="n">g</span><span class="o">+</span><span class="p">)</span><span class="n">n</span><span class="o">?</span>
-<span class="w">               </span><span class="nl">text:</span><span class="w"> </span><span class="p">&#39;</span><span class="k">assign</span><span class="p">&#39;</span>
-<span class="w">         </span><span class="n">parse</span><span class="w"> </span><span class="kt">time</span><span class="o">:</span><span class="w">        </span><span class="mf">46.5</span><span class="n">us</span>
-<span class="w">   </span><span class="n">compile</span><span class="w"> </span><span class="n">nfa</span><span class="w"> </span><span class="kt">time</span><span class="o">:</span><span class="w">        </span><span class="mf">74.9</span><span class="n">us</span>
-<span class="n">dfa</span><span class="w"> </span><span class="n">initialize</span><span class="w"> </span><span class="kt">time</span><span class="o">:</span><span class="w">        </span><span class="mf">78.4</span><span class="n">us</span>
-<span class="w">        </span><span class="n">search</span><span class="w"> </span><span class="kt">time</span><span class="o">:</span><span class="w">       </span><span class="mf">661.7</span><span class="n">us</span>
-<span class="w">    </span><span class="n">matching</span><span class="w"> </span><span class="nl">result:</span><span class="w">         </span><span class="n">T</span>
-<span class="w"> </span><span class="n">memory</span><span class="w"> </span><span class="p">(</span><span class="n">estimated</span><span class="p">)</span><span class="o">:</span><span class="w">     </span><span class="mh">10380</span>
+<div class="codehilite"><pre><span></span><code><span class="w">                </span><span class="nl">pattern:</span><span class="w"> </span><span class="p">([</span><span class="n">a</span><span class="o">-</span><span class="n">z</span><span class="p">]</span><span class="o">*</span><span class="n">g</span><span class="o">+</span><span class="p">)</span><span class="n">n</span><span class="o">?</span>
+<span class="w">                   </span><span class="nl">text:</span><span class="w"> </span><span class="p">&#39;</span><span class="k">assign</span><span class="p">&#39;</span>
+<span class="w">             </span><span class="n">parse</span><span class="w"> </span><span class="kt">time</span><span class="o">:</span><span class="w">        </span><span class="mf">42.9</span><span class="err">μ</span><span class="n">s</span>
+<span class="w">   </span><span class="n">extract</span><span class="w"> </span><span class="n">literal</span><span class="w"> </span><span class="kt">time</span><span class="o">:</span><span class="w">        </span><span class="mf">23.0</span><span class="err">μ</span><span class="n">s</span>
+<span class="w">            </span><span class="n">runs</span><span class="w"> </span><span class="nl">engine:</span><span class="w">         </span><span class="n">T</span>
+<span class="w">       </span><span class="n">compile</span><span class="w"> </span><span class="n">nfa</span><span class="w"> </span><span class="kt">time</span><span class="o">:</span><span class="w">        </span><span class="mf">26.5</span><span class="err">μ</span><span class="n">s</span>
+<span class="w">    </span><span class="n">dfa</span><span class="w"> </span><span class="n">initialize</span><span class="w"> </span><span class="kt">time</span><span class="o">:</span><span class="w">         </span><span class="mf">4.6</span><span class="err">μ</span><span class="n">s</span>
+<span class="w">            </span><span class="n">search</span><span class="w"> </span><span class="kt">time</span><span class="o">:</span><span class="w">       </span><span class="mf">617.1</span><span class="err">μ</span><span class="n">s</span>
+<span class="w">        </span><span class="n">matching</span><span class="w"> </span><span class="nl">result:</span><span class="w">         </span><span class="n">T</span>
+<span class="w"> </span><span class="n">automata</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">tree</span><span class="w"> </span><span class="nl">size:</span><span class="w">     </span><span class="mh">10324</span><span class="w">  </span><span class="n">bytes</span>
 
 <span class="o">==========</span><span class="w"> </span><span class="n">Thompson</span><span class="w"> </span><span class="n">NFA</span><span class="w"> </span><span class="o">===========</span>
 <span class="n">state</span><span class="w">    </span><span class="mh">1</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="o">?</span><span class="p">,</span><span class="w"> </span><span class="mh">5</span><span class="p">)</span>
@@ -348,43 +223,78 @@
 
 </div>
 
+<h4><code>debug</code>コマンド</h4>
+<p><code>debug</code>コマンドを使用すると、正規表現から構築された抽象構文木（AST）や非決定性有限オートマトン（NFA）の情報を得ることができます。</p>
+<p>例えば、<code>debug</code>コマンドと<code>ast</code>サブコマンドに、正規表現パターン<code>foo[0-9]+bar</code>を与えて実行します。</p>
+<div class="codehilite"><pre><span></span><code>forgex-cli<span class="w"> </span>debug<span class="w"> </span>ast<span class="w"> </span><span class="s1">&#39;foo[0-9]+bar&#39;</span>
+</code></pre></div>
+
+<p>そうすると、以下のように出力され、ASTの構造を知ることができます。</p>
+<div class="none-highlight-user">
+
+
+<div class="codehilite"><pre><span></span><code><span class="w">        </span><span class="nt">parse</span><span class="w"> </span><span class="nt">time</span><span class="o">:</span><span class="w">       </span><span class="nt">133</span><span class="p">.</span><span class="nc">8μs</span>
+<span class="w">      </span><span class="nt">extract</span><span class="w"> </span><span class="nt">time</span><span class="o">:</span><span class="w">        </span><span class="nt">36</span><span class="p">.</span><span class="nc">8μs</span>
+<span class="w"> </span><span class="nt">extracted</span><span class="w"> </span><span class="nt">literal</span><span class="o">:</span>
+<span class="w">  </span><span class="nt">extracted</span><span class="w"> </span><span class="nt">prefix</span><span class="o">:</span><span class="w"> </span><span class="nt">foo</span>
+<span class="w">  </span><span class="nt">extracted</span><span class="w"> </span><span class="nt">suffix</span><span class="o">:</span><span class="w"> </span><span class="nt">bar</span>
+<span class="nt">memory</span><span class="w"> </span><span class="o">(</span><span class="nt">estimated</span><span class="o">):</span><span class="w">       </span><span class="nt">848</span>
+<span class="o">(</span><span class="nt">concatenate</span><span class="w"> </span><span class="o">(</span><span class="nt">concatenate</span><span class="w"> </span><span class="o">(</span><span class="nt">concatenate</span><span class="w"> </span><span class="o">(</span><span class="nt">concatenate</span><span class="w"> </span><span class="o">(</span><span class="nt">concatenate</span><span class="w"> </span><span class="o">(</span><span class="nt">concatenate</span><span class="w"> </span><span class="s2">&quot;f&quot;</span><span class="w"> </span><span class="s2">&quot;o&quot;</span><span class="o">)</span><span class="w"> </span><span class="s2">&quot;o&quot;</span><span class="o">)</span><span class="w"> </span><span class="o">(</span><span class="nt">concatenate</span><span class="w"> </span><span class="cp">[</span><span class="w"> </span><span class="s2">&quot;0&quot;</span><span class="o">-</span><span class="s2">&quot;9&quot;</span><span class="p">;</span><span class="cp">]</span><span class="w"> </span><span class="o">(</span><span class="nt">closure</span><span class="cp">[</span><span class="w"> </span><span class="s2">&quot;0&quot;</span><span class="o">-</span><span class="s2">&quot;9&quot;</span><span class="p">;</span><span class="cp">]</span><span class="o">)))</span><span class="w"> </span><span class="s2">&quot;b&quot;</span><span class="o">)</span><span class="w"> </span><span class="s2">&quot;a&quot;</span><span class="o">)</span><span class="w"> </span><span class="s2">&quot;r&quot;</span><span class="o">)</span>
+</code></pre></div>
+
+
+
+</div>
+
+<p>次にNFAの情報を得るには、<code>debug</code>コマンドと<code>thompson</code>サブコマンドを指定して、パターンを与えます。</p>
+<div class="codehilite"><pre><span></span><code>forgex-cli<span class="w"> </span>debug<span class="w"> </span>thompson<span class="w"> </span><span class="s1">&#39;foo[0-9]+bar&#39;</span>
+</code></pre></div>
+
+<p>このコマンドの出力は、次のようになります。</p>
+<div class="codehilite"><pre><span></span><code>        parse time:       144.5μs
+  compile nfa time:        57.0μs
+memory (estimated):     11589
+
+========== Thompson NFA ===========
+state    1: (f, 8)
+state    2: &lt;Accepted&gt;
+state    3: (r, 2)
+state    4: (a, 3)
+state    5: (b, 4)
+state    6: ([&quot;0&quot;-&quot;9&quot;], 9)
+state    7: (o, 6)
+state    8: (o, 7)
+state    9: (?, 10)
+state   10: ([&quot;0&quot;-&quot;9&quot;], 11)(?, 5)
+state   11: (?, 10)
+
+Note: all segments of NFA were disjoined with overlapping portions.
+===================================
+</code></pre></div>
+
 <h3>注意</h3>
 <ul>
-<li>WindowおよびmacOS環境の<code>gfortran</code>でコンパイルされたプログラムでは、OpenMPの並列ブロックの中で割り付け可能文字列型変数を使用すると、セグメンテーション違反などでプログラムが停止する可能性があります。</li>
+<li>コマンドライン引数に<code>--help</code>を指定すると、使用可能なオプションフラグに関する情報を取得できます。</li>
 <li>コマンドラインツール<code>forgex-cli</code>をWindows上のPowerShellで利用する場合、Unicode文字を正しく入出力するには、システムのロケールをUTF-8に変更する必要があります。</li>
 </ul>
 <h2>To Do</h2>
 <ul>
-<li>Unicodeエスケープシーケンス<code>\p{...}</code>の追加</li>
-<li>UTF-8において無効なバイトストリームへの対処</li>
-<li>✅️ リテラル検索によるマッチングの最適化</li>
+<li>ドキュメントの公開</li>
+<li>CMakeによるビルドのサポート</li>
 <li>✅️ デバッグおよびベンチマーク用のCLIツールを追加</li>
-<li>✅️ すべてのAPI演算子に<code>pure elemental</code>属性を追加</li>
-<li>✅️ ドキュメントの公開</li>
-<li>✅️ UTF-8文字の基本的なサポート</li>
-<li>✅️ On-the-FlyのDFA構築</li>
-<li>✅️ CMakeによるビルドのサポート</li>
 <li>✅️ 簡単な時間計測ツールの追加</li>
-<li><s>マッチングの並列化</s></li>
 </ul>
 <h2>コーディング規約</h2>
 <p>本プロジェクトに含まれるすべてのコードは、3スペースのインデントで記述されます。</p>
 <h2>謝辞</h2>
-<p>冪集合構成法のアルゴリズムと構文解析については、Russ Cox氏の論文と近藤嘉雪氏の本を参考にしました。
-優先度付きキューの実装は、<a href="https://github.com/ue1221/fortran-utilities">ue1221さんのコード</a>に基づいています。
-文字列に対して<code>.in.</code>演算子を適用するというアイデアは、soybeanさんのものにインスパイアされました。
-<code>forgex-cli</code>のコマンドラインインターフェイスの設計については、Rust言語の<code>regex-cli</code>を参考にしました。</p>
+<p><code>forgex-cli</code>のコマンドラインインターフェイスの設計については、Rust言語の<code>regex-cli</code>を参考にしました。</p>
 <h2>参考文献</h2>
 <ol>
-<li>Russ Cox <a href="https://swtch.com/~rsc/regexp/regexp1.html">"Regular Expression Matching Can Be Simple And Fast"</a>, 2007年</li>
-<li>近藤嘉雪, "定本 Cプログラマのためのアルゴリズムとデータ構造", 1998年, SB Creative.</li>
-<li><a href="https://github.com/ue1221/fortran-utilities">ue1221/fortran-utilities</a></li>
-<li><a href="https://github.com/kazulagi">kazulagi, @soybean</a>, <a href="https://qiita.com/soybean/items/7cdd2156a9d8843c0d91">Fortranでユーザー定義演算子.in.を作る - Qiita.com</a>, 2022年</li>
 <li><a href="https://github.com/rust-lang/regex/tree/master/regex-cli">rust-lang/regex/regex-cli</a></li>
 </ol>
 <h2>ライセンス</h2>
 <p>このプロジェクトはMITライセンスで提供されるフリーソフトウェアです
-（cf. <a href="https://github.com/ShinobuAmasaki/forgex/blob/main/LICENSE">LICENSE</a>）。</p>
+（cf. <a href="https://github.com/ShinobuAmasaki/forgex-cli/blob/main/LICENSE">LICENSE</a>）。</p>
     </div>
   </div>
       <hr>
@@ -394,7 +304,7 @@
         <div class="row justify-content-between">
           <div class="col">
             <p>
-              Forgex—Fortran Regular Expression
+              Forgex-CLI
  was developed by Amasaki Shinobu<br>              &copy; 2023-2024 <a rel="license" href="https://opensource.org/licenses/MIT">MIT</a>
 </p>
           </div>
@@ -402,7 +312,7 @@
             <p class="text-end">
               Documentation generated by
               <a href="https://github.com/Fortran-FOSS-Programmers/ford">FORD</a>
- on 2024-08-31 08:03              </p>
+ on 2024-09-01 02:20              </p>
           </div>
         </div>
         <br>
