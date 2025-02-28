@@ -18,6 +18,7 @@ contains
    !> and stores the string index in the argument if it contains a match.
    subroutine do_matching_including_no_literal_opts (automaton, string, from, to)
       use :: forgex_utility_m
+      use :: forgex_utf8_m, only: make_replacement_char
       implicit none
       type(automaton_t), intent(inout) :: automaton
       character(*),      intent(in)    :: string
@@ -30,6 +31,8 @@ contains
       integer :: start        ! starting character index
       integer :: i
       character(:), allocatable :: str
+
+      logical :: is_valid_utf8_char
 
       str = string
       from = 0
@@ -70,9 +73,13 @@ contains
 
             if (ci > len(str)) exit
 
-            next_ci = idxutf8(str, ci) + 1
-
-            call automaton%construct(cur_i, dst_i, str(ci:next_ci-1))
+            call next_idxutf8_strict(str, ci, next_ci, is_valid_utf8_char)
+            
+            if (is_valid_utf8_char) then
+               call automaton%construct(cur_i, dst_i, str(ci:next_ci-1))
+            else
+               call automaton%construct(cur_i, dst_i, make_replacement_char())
+            end if
 
             cur_i = dst_i
             ci = next_ci
@@ -90,7 +97,7 @@ contains
             return
          end if
 
-         start = idxutf8(str, start) + 1 ! Bruteforce searching
+         call next_idxutf8_strict(str, start, start, is_valid_utf8_char) ! Bruteforce searching
 
       end do
    end subroutine do_matching_including_no_literal_opts

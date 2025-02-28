@@ -43,24 +43,28 @@ contains
       call tree%build(trim(pattern))
       lap1 = time_lap()
 
-      entire = get_entire_literal(tree)
-      prefix = get_prefix_literal(tree)
-      ! middle = get_middle_literal(tree)
-      suffix = get_suffix_literal(tree)
-      lap2 = time_lap()
+      if (tree%is_valid) then
 
-      open(newunit=uni, status='scratch')
-      call tree%print(uni)
+         entire = get_entire_literal(tree)
+         prefix = get_prefix_literal(tree)
+         ! middle = get_middle_literal(tree)
+         suffix = get_suffix_literal(tree)
+         lap2 = time_lap()
 
-      inquire(unit=uni, size=siz)
-      allocate(character(siz+2) :: buff)
+         open(newunit=uni, status='scratch')
+         call tree%print(uni)
 
-      rewind(uni)
-      read(uni, fmta, iostat=ierr) buff
-      close(uni)
+         inquire(unit=uni, size=siz)
+         allocate(character(siz+2) :: buff)
 
-      ast = trim(buff)
+         rewind(uni)
+         read(uni, fmta, iostat=ierr) buff
+         close(uni)
 
+         ast = trim(buff)
+      else
+         
+      end if
       output: block
          character(NUM_DIGIT_KEY) :: parse_time, literal_time, tree_count, tree_allocated, &
             memory, literal_pre, literal_post, literal_all, literal_mid
