@@ -54,6 +54,7 @@ contains
          return
       end if
 
+      ! Literal search optimiztion is off.
       loop_init: block
          i = 1
          start = i
@@ -97,6 +98,7 @@ contains
             return
          end if
 
+         ! Literal search optimization is off.
          call next_idxutf8_strict(str, start, start, is_valid_utf8_char) ! Bruteforce searching
 
       end do
@@ -115,6 +117,8 @@ contains
       integer :: next_ci      ! next character index
       integer :: max_match    !
       character(:), allocatable :: str
+
+      logical :: is_valid_utf8_char
 
       ! Initialize `cur_i` with automaton's initial index.
       cur_i = automaton%initial_index
@@ -147,17 +151,27 @@ contains
          if (ci > len(str)) exit
 
          ! Get the index of the next character and assign it to `next_ci`.
-         next_ci = idxutf8(str, ci) + 1
+         ! next_ci = idxutf8(str, ci) + 1
+         call next_idxutf8_strict(str, ci, ci, is_valid_utf8_char)
 
          ! Lazy evaluation is performed by calling this procedure here.
          ! The index of destination DFA node is stored in the `dst_i` variable.
-         call automaton%construct(cur_i, dst_i, str(ci:next_ci-1))
+         if (is_valid_utf8_char) then
+            call automaton%construct(cur_i, dst_i, str(ci:next_ci-1))
+         else
+            call automaton%construct(cur_i, dst_i, make_replacement_char())
+         end if
 
          ! If there is mismatch in the first byte of the NULL character, try again with the second byte.
          if (dst_i == DFA_INVALID_INDEX .and. ci == 1) then
             ci = 2
-            next_ci = idxutf8(str, ci) + 1
-            call automaton%construct(cur_i, dst_i, str(ci:next_ci-1))
+            ! next_ci = idxutf8(str, ci) + 1
+            call next_idxutf8_strict(str, ci, ci, is_valid_utf8_char)
+            if (is_valid_utf8_char) then
+               call automaton%construct(cur_i, dst_i, str(ci:next_ci-1))
+            else
+               call automaton%construct(cur_i, dst_i, make_replacement_char())
+            end if
          end if
 
          ! update counters
