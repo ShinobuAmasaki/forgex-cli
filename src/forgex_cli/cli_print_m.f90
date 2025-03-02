@@ -4,14 +4,13 @@ module forgex_cli_print_m
    implicit none
    private
 
-   integer, parameter, public :: KEYS_NUM = 20, KEYS_MAX_LENGTH = 32
+   integer, parameter, public :: KEYS_NUM = 19, KEYS_MAX_LENGTH = 32
 
    ! 20 Keys
    character(KEYS_MAX_LENGTH), parameter, public :: k_pattern        = "pattern"
    character(KEYS_MAX_LENGTH), parameter, public :: k_text           = "text"
    character(KEYS_MAX_LENGTH), parameter, public :: k_runs_engine    = "runs engine"
    character(KEYS_MAX_LENGTH), parameter, public :: k_matching_result= "result"
-   character(KEYS_MAX_LENGTH), parameter, public :: k_memory         = "memory (estimated)"
 
    character(KEYS_MAX_LENGTH), parameter, public :: k_parse_time     = "parse time"
    character(KEYS_MAX_LENGTH), parameter, public :: k_nfa_time       = "compile nfa time"
@@ -42,23 +41,20 @@ module forgex_cli_print_m
       enumerator :: i_literal_mid
       enumerator :: i_literal_post
       enumerator :: i_literal_time
+      enumerator :: i_parse_time
+      enumerator :: i_nfa_time
+      enumerator :: i_dfa_init_time
+      enumerator :: i_matching_time
 
       enumerator :: i_tree_count
       enumerator :: i_tree_allocated
-      enumerator :: i_parse_time
-
       enumerator :: i_runs_engine
-      enumerator :: i_nfa_time
       enumerator :: i_nfa_count
       enumerator :: i_nfa_allocated
-
       enumerator :: i_dfa_count
-      enumerator :: i_dfa_init_time
 
       enumerator :: i_matching_result
-      enumerator :: i_matching_time
       enumerator :: i_total_time
-      enumerator :: i_memory      
    end enum
 
    ! 順序が重要
@@ -70,19 +66,18 @@ module forgex_cli_print_m
         k_literal_mid, &
         k_literal_post, &
         k_literal_time, &
+        k_parse_time, &
+        k_nfa_time, &
+        k_dfa_init_time, &
+        k_matching_time, &
         k_tree_count, &
         k_tree_allocated, &
-        k_parse_time, &
         k_runs_engine, &
-        k_nfa_time, &
         k_nfa_count, &
         k_nfa_allocated, &
         k_dfa_count, &
-        k_dfa_init_time, &
         k_matching_result,&
-        k_matching_time, &
-        k_total_time, &
-        k_memory &
+        k_total_time &
       ]
 
    type :: ac_t
@@ -116,7 +111,6 @@ module forgex_cli_print_m
    public :: i_text
    public :: i_runs_engine
    public :: i_matching_result
-   public :: i_memory
 
    public :: i_parse_time
    public :: i_nfa_time

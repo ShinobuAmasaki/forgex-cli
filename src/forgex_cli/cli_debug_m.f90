@@ -7,7 +7,7 @@
 !     forgex_cli_debug_m module is a part of Forgex.
 !
 module forgex_cli_debug_m
-   use, intrinsic :: iso_fortran_env, only: int32, real64, stderr => error_unit, stdout => output_unit
+   use, intrinsic :: iso_fortran_env, only: int32,real64, stderr => error_unit, stdout => output_unit
    use :: forgex_cli_time_measurement_m, only: time_begin, time_lap, get_lap_time_in_appropriate_unit
    use :: forgex_cli_parameters_m, only: NUM_DIGIT_KEY, fmt_out_time, fmt_out_int, fmt_out_ratio, &
             fmt_out_logi, fmta, fmt_out_char, CRLF, LF, HEADER_DFA, HEADER_NFA ,FOOTER
@@ -27,7 +27,7 @@ contains
       use :: forgex_syntax_tree_optimize_m
       use :: forgex_cli_memory_calculation_m
       use :: forgex_cli_print_m
-      use :: forgex_utility_m
+      use :: forgex_error_m
       implicit none
       logical, intent(in) :: flags(:)
       character(*), intent(in) :: pattern
@@ -40,8 +40,6 @@ contains
       real(real64) :: lap1, lap2
       type(table_t) :: table
 
-      call table%init(INFO_TABLE_KEYS)
-
       if (flags(FLAG_HELP)) call print_help_debug_ast
 
       call time_begin
@@ -52,21 +50,18 @@ contains
       if (tree%is_valid) then
 
          entire = get_entire_literal(tree)
-         if (trim(entire) == '') entire = "<none>" 
-         
          prefix = get_prefix_literal(tree)
-         if (trim(prefix) == '') prefix = "<none>" 
-         
          ! middle = get_middle_literal(tree)
-         ! if (trim(middle) == '') middle = "<not implemented yet>" 
-         middle = "<not implemented yet>" 
-         
          suffix = get_suffix_literal(tree)
-         if (trim(suffix) == '') suffix = "<none>" 
-         
          lap2 = time_lap()
 
+         middle = "<not implemented yet>" 
+         if (trim(entire) == '') entire = "<none>" 
+         if (trim(prefix) == '') prefix = "<none>" 
+         ! if (trim(middle) == '') middle = "<not implemented yet>" 
+         if (trim(suffix) == '') suffix = "<none>" 
 
+         call table%init(INFO_TABLE_KEYS)
          call table%register_int(i_tree_allocated, size(tree%nodes))
          call table%register_int(i_tree_count, tree%top)
          call table%register_char(i_pattern, pattern)
@@ -89,43 +84,34 @@ contains
 
          ast = trim(buff)
       else
-         
+         write(stderr, '(a)') get_error_message(tree%code)
+         stop
       end if
 
       output: block
-         if (flags(FLAG_VERBOSE)) then
 
-            table%info(i_pattern)%is        = .true.
-            table%info(i_parse_time)%is     = .true.
-            table%info(i_literal_time)%is   = .true.
+         table%info(i_pattern)%is        = .true.
+         table%info(i_parse_time)%is     = .true.
+         table%info(i_literal_time)%is   = .true.
+         table%info(i_literal_all)%is    = .true.
+         table%info(i_literal_pre)%is    = .true.
+         table%info(i_literal_mid)%is    = .true.
+         table%info(i_literal_post)%is   = .true.
+
+         if (flags(FLAG_VERBOSE)) then
             table%info(i_tree_count)%is     = .true.
             table%info(i_tree_allocated)%is = .true.
-            table%info(i_literal_all)%is    = .true.
-            table%info(i_literal_pre)%is    = .true.
-            table%info(i_literal_mid)%is    = .true.
-            table%info(i_literal_post)%is   = .true.
-
-            call table%justify()
-            call table%write()
-
-         else if (flags(FLAG_NO_TABLE)) then
-            continue
-         else
-            table%info(i_pattern)%is        = .true.
-            table%info(i_parse_time)%is     = .true.
-            table%info(i_literal_time)%is   = .true.
-            table%info(i_literal_all)%is    = .true.
-            table%info(i_literal_pre)%is    = .true.
-            table%info(i_literal_mid)%is    = .true.
-            table%info(i_literal_post)%is   = .true.
-            
+         end if
+         
+         if (.not. flags(FLAG_NO_TABLE)) then
             call table%justify()
             call table%write()
          end if
-      end block output
 
-      if (flags(FLAG_TABLE_ONLY)) return
-      write(stdout, fmta) ast
+         if (flags(FLAG_TABLE_ONLY)) return
+         write(stdout, fmta) ast
+   
+      end block output
 
    end subroutine do_debug_ast
 
@@ -134,18 +120,22 @@ contains
       use :: forgex_cli_memory_calculation_m
       use :: forgex_automaton_m
       use :: forgex_syntax_tree_graph_m
+      use :: forgex_utility_m
+      use :: forgex_error_m
       use :: forgex_cli_utils_m
+      use :: forgex_cli_print_m
       implicit none
       logical, intent(in) :: flags(:)
       character(*), intent(in) :: pattern
 
       type(tree_t) :: tree
       type(automaton_t) :: automaton
+      type(table_t) :: table
       integer :: root
       integer :: uni, ierr, i
       character(:), allocatable :: nfa
       character(256) :: line
-      real(real64) :: lap1, lap2
+      real(real64) :: lap1, lap2, lap3
 
       nfa = ''
 
@@ -156,6 +146,11 @@ contains
       ! call build_syntax_tree(trim(pattern), tree%tape, tree, root)
       call tree%build(trim(pattern))
       lap1 = time_lap()
+
+      if (.not. tree%is_valid) then
+         write(stderr, '(a)') get_error_message(tree%code)
+         stop
+      end if
 
       call automaton%nfa%build(tree, automaton%nfa_entry, automaton%nfa_exit, automaton%all_segments)
       lap2 = time_lap()
@@ -178,53 +173,39 @@ contains
       end do
       close(uni)
 
+      call table%init(INFO_TABLE_KEYS)
+      call table%register_int(i_tree_allocated, size(tree%nodes))
+      call table%register_int(i_tree_count, tree%top)
+      call table%register_char(i_pattern, pattern)
+      call table%register_real(i_parse_time, lap1)
+      call table%register_real(i_nfa_time, lap2)
+      call table%register_int(i_nfa_count, automaton%nfa%nfa_top)
+      call table%register_int(i_nfa_allocated, size(automaton%nfa%nodes))
+
+
       output: block
          character(NUM_DIGIT_KEY) :: parse_time, nfa_time, memory, nfa_count, nfa_allocated, tree_count, tree_allocated
          character(NUM_DIGIT_KEY) :: cbuff(7) = ''
          integer :: memsiz
 
-         parse_time     = "parse time:"
-         nfa_time       = "compile nfa time:"
-         memory         = "memory (estimated):"
-
-         nfa_count      = "nfa states:"
-         nfa_allocated  = "nfa states allocated:"
-         tree_count     = "tree node count:"
-         tree_allocated = "tree node allocated:"
-
-         memsiz = mem_tape(tree%tape) + mem_tree(tree%nodes) &
-                  + mem_nfa_graph(automaton%nfa) + 4*3
-         if (allocated(automaton%entry_set%vec)) then
-            memsiz = memsiz + size(automaton%entry_set%vec, dim=1)
-         end if
-         if (allocated(automaton%all_segments)) then
-            memsiz = memsiz + size(automaton%all_segments, dim=1)*8
-         end if
+         table%info(i_pattern)%is        = .true.
+         table%info(i_parse_time)%is     = .true.
+         table%info(i_nfa_time)%is       = .true.
 
          if (flags(FLAG_VERBOSE)) then
-            cbuff = [parse_time,  nfa_time, memory, tree_count, tree_allocated, nfa_count, nfa_allocated]
-            call right_justify(cbuff)
+            table%info(i_tree_count)%is     = .true.
+            table%info(i_tree_allocated)%is = .true.
+            table%info(i_nfa_count)%is      = .true.
+            table%info(i_nfa_allocated)%is  = .true.
+         end if
 
-            write(stdout, fmt_out_time) trim(cbuff(1)), get_lap_time_in_appropriate_unit(lap1)
-            write(stdout, fmt_out_time) trim(cbuff(2)), get_lap_time_in_appropriate_unit(lap2)
-            write(stdout, fmt_out_int)  trim(cbuff(3)), memsiz
-            write(stdout, fmt_out_int) trim(cbuff(4)), root
-            write(stdout, fmt_out_int) trim(cbuff(5)), size(tree%nodes, dim=1)
-            write(stdout, fmt_out_int) trim(cbuff(6)), automaton%nfa%nfa_top
-            write(stdout, fmt_out_int) trim(cbuff(7)), automaton%nfa%nfa_limit
-         else if (flags(FLAG_NO_TABLE)) then
-            continue
-         else
-            cbuff(:) = [parse_time, nfa_time, memory, (repeat(" ", NUM_DIGIT_KEY), i = 1, 4)]
-            call right_justify(cbuff)
-
-            write(stdout, fmt_out_time) trim(cbuff(1)), get_lap_time_in_appropriate_unit(lap1)
-            write(stdout, fmt_out_time) trim(cbuff(2)), get_lap_time_in_appropriate_unit(lap2)
-            write(stdout, fmt_out_int) trim(cbuff(3)), memsiz
+         if (.not. flags(FLAG_NO_TABLE)) then
+            call table%justify()
+            call table%write()
          end if
 
          if (flags(FLAG_TABLE_ONLY)) return
-
+         
          write(stdout, *) ""
          write(stdout, fmta) HEADER_NFA
          write(stdout, fmta) trim(nfa)
