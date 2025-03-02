@@ -28,6 +28,7 @@ module forgex_cli_time_measurement_m
    logical(c_bool) :: is_supported = .false.
    logical(c_bool) :: is_succeeded = .false.
 
+
    !> For Windows, use high-resolution system call for timing.
    interface
       function QueryPerformanceCounter(PerformanceCount_count) result(is_succeeded_c) &
@@ -155,6 +156,7 @@ contains
          multiplied = lap_time * 1d9
       end if
 
+      unit = ' '//unit
       write(res, '(f10.1, a)') multiplied, unit
 
    end function get_lap_time_in_appropriate_unit

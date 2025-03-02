@@ -12,7 +12,7 @@ module forgex_cli_debug_m
    use :: forgex_cli_parameters_m, only: NUM_DIGIT_KEY, fmt_out_time, fmt_out_int, fmt_out_ratio, &
             fmt_out_logi, fmta, fmt_out_char, CRLF, LF, HEADER_DFA, HEADER_NFA ,FOOTER
    use :: forgex_enums_m, only: FLAG_HELP, FLAG_NO_TABLE, FLAG_VERBOSE, FLAG_TABLE_ONLY, OS_WINDOWS
-   use :: forgex_cli_utils_m, only: get_os_type, right_justify
+   use :: forgex_cli_utils_m, only: get_os_type
    use :: forgex_cli_help_messages_m, only: print_help_debug_ast, print_help_debug_thompson
    implicit none
    private
@@ -26,6 +26,8 @@ contains
       use :: forgex_syntax_tree_graph_m
       use :: forgex_syntax_tree_optimize_m
       use :: forgex_cli_memory_calculation_m
+      use :: forgex_cli_print_m
+      use :: forgex_utility_m
       implicit none
       logical, intent(in) :: flags(:)
       character(*), intent(in) :: pattern
@@ -34,8 +36,11 @@ contains
       integer :: root
       integer :: uni, ierr, siz
       character(:), allocatable :: buff
-      character(:),allocatable :: ast, prefix, suffix, entire !, middle
+      character(:),allocatable :: ast, prefix, suffix, entire, middle
       real(real64) :: lap1, lap2
+      type(table_t) :: table
+
+      call table%init(INFO_TABLE_KEYS)
 
       if (flags(FLAG_HELP)) call print_help_debug_ast
 
@@ -43,13 +48,34 @@ contains
       call tree%build(trim(pattern))
       lap1 = time_lap()
 
+
       if (tree%is_valid) then
 
          entire = get_entire_literal(tree)
+         if (trim(entire) == '') entire = "<none>" 
+         
          prefix = get_prefix_literal(tree)
+         if (trim(prefix) == '') prefix = "<none>" 
+         
          ! middle = get_middle_literal(tree)
+         ! if (trim(middle) == '') middle = "<not implemented yet>" 
+         middle = "<not implemented yet>" 
+         
          suffix = get_suffix_literal(tree)
+         if (trim(suffix) == '') suffix = "<none>" 
+         
          lap2 = time_lap()
+
+
+         call table%register_int(i_tree_allocated, size(tree%nodes))
+         call table%register_int(i_tree_count, tree%top)
+         call table%register_char(i_pattern, pattern)
+         call table%register_real(i_parse_time, lap1)
+         call table%register_char(i_literal_all, entire)
+         call table%register_char(i_literal_pre, prefix)
+         call table%register_char(i_literal_mid, middle)
+         call table%register_char(i_literal_post, suffix)
+         call table%register_real(i_literal_time, lap2)
 
          open(newunit=uni, status='scratch')
          call tree%print(uni)
@@ -65,50 +91,36 @@ contains
       else
          
       end if
+
       output: block
-         character(NUM_DIGIT_KEY) :: parse_time, literal_time, tree_count, tree_allocated, &
-            memory, literal_pre, literal_post, literal_all, literal_mid
-         character(NUM_DIGIT_KEY) :: cbuff(9)
-         integer :: i
-         parse_time     = "parse time:"
-         literal_time   = "extract time:"
-         tree_count     = "tree node count:"
-         tree_allocated = "tree node allocated:"
-         literal_all    = "extracted literal:"
-         literal_pre    = "extracted prefix:"
-         literal_mid    = "extracted middle:"
-         literal_post   = "extracted suffix:"
-         memory         = "memory (estimated):"
-         
-
          if (flags(FLAG_VERBOSE)) then
-            cbuff = [parse_time, literal_time, literal_all, literal_pre, literal_mid, literal_post, &
-                     memory, tree_count, tree_allocated]
-            call right_justify(cbuff)
 
-            write(stdout, fmt_out_time) trim(cbuff(1)), get_lap_time_in_appropriate_unit(lap1)
-            write(stdout, fmt_out_time) trim(cbuff(2)), get_lap_time_in_appropriate_unit(lap2)
-            write(stdout, fmt_out_char) trim(cbuff(3)), entire
-            write(stdout, fmt_out_char) trim(cbuff(4)), prefix
-            ! write(stdout, fmt_out_char) trim(cbuff(5)), middle
-            write(stdout, fmt_out_char) trim(cbuff(6)), suffix
-            write(stdout, fmt_out_int) trim(cbuff(7)), mem_tape(tree%tape) + mem_tree(tree%nodes)
-            write(stdout, fmt_out_int) trim(cbuff(8)), root
-            write(stdout, fmt_out_int) trim(cbuff(9)), size(tree%nodes, dim=1)
+            table%info(i_pattern)%is        = .true.
+            table%info(i_parse_time)%is     = .true.
+            table%info(i_literal_time)%is   = .true.
+            table%info(i_tree_count)%is     = .true.
+            table%info(i_tree_allocated)%is = .true.
+            table%info(i_literal_all)%is    = .true.
+            table%info(i_literal_pre)%is    = .true.
+            table%info(i_literal_mid)%is    = .true.
+            table%info(i_literal_post)%is   = .true.
+
+            call table%justify()
+            call table%write()
+
          else if (flags(FLAG_NO_TABLE)) then
             continue
          else
-            cbuff = [parse_time, literal_time, literal_all, literal_pre, literal_mid, &
-                     literal_post, memory, (repeat(" ", NUM_DIGIT_KEY), i=1, 2)]
-            call right_justify(cbuff)
-
-            write(stdout, fmt_out_time) trim(cbuff(1)), get_lap_time_in_appropriate_unit(lap1)
-            write(stdout, fmt_out_time) trim(cbuff(2)), get_lap_time_in_appropriate_unit(lap2)
-            write(stdout, fmt_out_char) trim(cbuff(3)), entire
-            write(stdout, fmt_out_char) trim(cbuff(4)), prefix
-            ! write(stdout, fmt_out_char) trim(cbuff(5)), middle
-            write(stdout, fmt_out_char) trim(cbuff(6)), suffix
-            write(stdout, fmt_out_int) trim(cbuff(7)), mem_tape(tree%tape)+mem_tree(tree%nodes)
+            table%info(i_pattern)%is        = .true.
+            table%info(i_parse_time)%is     = .true.
+            table%info(i_literal_time)%is   = .true.
+            table%info(i_literal_all)%is    = .true.
+            table%info(i_literal_pre)%is    = .true.
+            table%info(i_literal_mid)%is    = .true.
+            table%info(i_literal_post)%is   = .true.
+            
+            call table%justify()
+            call table%write()
          end if
       end block output
 
@@ -122,6 +134,7 @@ contains
       use :: forgex_cli_memory_calculation_m
       use :: forgex_automaton_m
       use :: forgex_syntax_tree_graph_m
+      use :: forgex_cli_utils_m
       implicit none
       logical, intent(in) :: flags(:)
       character(*), intent(in) :: pattern
