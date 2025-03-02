@@ -45,6 +45,7 @@ module forgex_cli_print_m
       enumerator :: i_nfa_time
       enumerator :: i_dfa_init_time
       enumerator :: i_matching_time
+      enumerator :: i_total_time
 
       enumerator :: i_tree_count
       enumerator :: i_tree_allocated
@@ -54,7 +55,6 @@ module forgex_cli_print_m
       enumerator :: i_dfa_count
 
       enumerator :: i_matching_result
-      enumerator :: i_total_time
    end enum
 
    ! 順序が重要
@@ -70,14 +70,14 @@ module forgex_cli_print_m
         k_nfa_time, &
         k_dfa_init_time, &
         k_matching_time, &
+        k_total_time, &
         k_tree_count, &
         k_tree_allocated, &
         k_runs_engine, &
         k_nfa_count, &
         k_nfa_allocated, &
         k_dfa_count, &
-        k_matching_result,&
-        k_total_time &
+        k_matching_result&
       ]
 
    type :: ac_t
@@ -105,6 +105,7 @@ module forgex_cli_print_m
       procedure :: register_real
       procedure :: register_char
       procedure :: register_int
+      procedure :: register_logical
    end type table_t
 
    public :: i_pattern
@@ -235,6 +236,20 @@ contains
 
    end subroutine register_real
 
+   subroutine register_logical(self, idx, flag)
+      use :: forgex_cli_time_measurement_m
+      implicit none
+      class(table_t), intent(inout) :: self
+      integer, intent(in) :: idx
+      logical, intent(in) :: flag
+      
+      if (flag) then
+         self%info(idx)%value = 'T'
+      else
+         self%info(idx)%value = 'F'
+      end if
+
+   end subroutine register_logical
 
    subroutine info_output(self)
       implicit none

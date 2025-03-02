@@ -27,6 +27,7 @@ contains
       use :: forgex_parameters_m, only: INVALID_CHAR_INDEX
       use :: forgex_cli_time_measurement_m
       use :: forgex_cli_utils_m, only: text_highlight_green
+      use :: forgex_cli_print_m
       implicit none
       logical, intent(in) :: flags(:)
       character(*), intent(in) :: pattern, text
@@ -36,6 +37,7 @@ contains
       logical :: res
       character(:), allocatable :: res_string
       integer :: from, to, unused
+      type(table_t) :: table
 
       res_string = ''
       from = INVALID_CHAR_INDEX
@@ -52,25 +54,27 @@ contains
       ! Invoke regex subroutine to highlight matched substring.
       call regex(pattern, text, res_string, unused, from, to)
 
-      output: block
-         character(NUM_DIGIT_KEY) :: pattern_key, text_key
-         character(NUM_DIGIT_KEY) :: total_time, matching_result
-         character(NUM_DIGIT_KEY) :: buf(4)
+      output_prepare: block
+         call table%init(info_table_keys)
+         call table%register_char(i_pattern, pattern)
+         call table%register_char(i_text, '"'//text_highlight_green(text, from, to)//'"')
+         call table%register_logical(i_matching_result, res)
+         call table%register_real(i_total_time, lap)
+      end block output_prepare
 
-         pattern_key = "pattern:"
-         text_key = "text:"
-         total_time = "time:"
-         matching_result = "result:"
-         if (flags(FLAG_NO_TABLE)) then
-            write(stdout, *) res
-         else
-            buf = [pattern_key, text_key, total_time, matching_result]
-            call right_justify(buf)
-            write(stdout, '(a, 1x, a)') trim(buf(1)), trim(adjustl(pattern))
-            write(stdout, '(a, 1x, a)') trim(buf(2)), '"'//text_highlight_green(text, from, to)//'"'
-            write(stdout, fmt_out_time) trim(buf(3)), get_lap_time_in_appropriate_unit(lap)
-            write(stdout, fmt_out_logi) trim(buf(4)), res
+      output: block
+
+         if (.not. flags(FLAG_NO_TABLE)) then
+            table%info(i_pattern)%is    = .true.
+            table%info(i_text)%is       =.true.
+            table%info(i_total_time)%is = .true.
          end if
+
+         table%info(i_matching_result)%is = .true. 
+
+         call table%justify()
+         call table%write()
+
       end block output
 
    end subroutine do_find_match_forgex
