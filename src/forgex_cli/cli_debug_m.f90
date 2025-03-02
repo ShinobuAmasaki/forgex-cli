@@ -42,19 +42,28 @@ contains
 
       if (flags(FLAG_HELP)) call print_help_debug_ast
 
-      call time_begin
-      call tree%build(trim(pattern))
-      lap1 = time_lap()
+      time_measure_1:block
+         call time_begin
+         call tree%build(trim(pattern))
+         lap1 = time_lap()
+      end block time_measure_1
 
+      if (.not. tree%is_valid) then
+         write(stderr, '(a)') get_error_message(tree%code)
+         stop
+      end if
 
-      if (tree%is_valid) then
-
+      time_measure_2: block
+         call time_begin
          entire = get_entire_literal(tree)
          prefix = get_prefix_literal(tree)
          ! middle = get_middle_literal(tree)
          suffix = get_suffix_literal(tree)
          lap2 = time_lap()
+      end block time_measure_2
 
+      output_prepare: block
+         
          middle = "<not implemented yet>" 
          if (trim(entire) == '') entire = "<none>" 
          if (trim(prefix) == '') prefix = "<none>" 
@@ -83,10 +92,8 @@ contains
          close(uni)
 
          ast = trim(buff)
-      else
-         write(stderr, '(a)') get_error_message(tree%code)
-         stop
-      end if
+
+      end block output_prepare
 
       output: block
 
@@ -137,51 +144,55 @@ contains
       character(256) :: line
       real(real64) :: lap1, lap2, lap3
 
-      nfa = ''
 
       if (flags(FLAG_HELP)) call print_help_debug_thompson
       if (pattern == '') call print_help_debug_thompson
+      
+      time_measure: block
+         call time_begin()
+         ! call build_syntax_tree(trim(pattern), tree%tape, tree, root)
+         call tree%build(trim(pattern))
+         lap1 = time_lap()
 
-      call time_begin()
-      ! call build_syntax_tree(trim(pattern), tree%tape, tree, root)
-      call tree%build(trim(pattern))
-      lap1 = time_lap()
-
-      if (.not. tree%is_valid) then
-         write(stderr, '(a)') get_error_message(tree%code)
-         stop
-      end if
-
-      call automaton%nfa%build(tree, automaton%nfa_entry, automaton%nfa_exit, automaton%all_segments)
-      lap2 = time_lap()
-
-      open(newunit=uni, status='scratch')
-      call automaton%nfa%print(uni, automaton%nfa_exit)
-
-      rewind(uni)
-      ierr = 0
-      do while (ierr == 0)
-         read(uni, fmta, iostat=ierr) line
-         if (ierr /= 0) exit
-
-         if (get_os_type() == OS_WINDOWS) then
-            nfa = nfa//trim(line)//CRLF
-         else
-            nfa = nfa//trim(line)//LF
+         if (.not. tree%is_valid) then
+            write(stderr, '(a)') get_error_message(tree%code)
+            stop
          end if
 
-      end do
-      close(uni)
+         call automaton%nfa%build(tree, automaton%nfa_entry, automaton%nfa_exit, automaton%all_segments)
+         lap2 = time_lap()
+      end block time_measure
 
-      call table%init(INFO_TABLE_KEYS)
-      call table%register_int(i_tree_allocated, size(tree%nodes))
-      call table%register_int(i_tree_count, tree%top)
-      call table%register_char(i_pattern, pattern)
-      call table%register_real(i_parse_time, lap1)
-      call table%register_real(i_nfa_time, lap2)
-      call table%register_int(i_nfa_count, automaton%nfa%nfa_top)
-      call table%register_int(i_nfa_allocated, size(automaton%nfa%nodes))
 
+      output_prepare: block
+         nfa = ''
+         open(newunit=uni, status='scratch')
+         call automaton%nfa%print(uni, automaton%nfa_exit)
+
+         rewind(uni)
+         ierr = 0
+         do while (ierr == 0)
+            read(uni, fmta, iostat=ierr) line
+            if (ierr /= 0) exit
+
+            if (get_os_type() == OS_WINDOWS) then
+               nfa = nfa//trim(line)//CRLF
+            else
+               nfa = nfa//trim(line)//LF
+            end if
+
+         end do
+         close(uni)
+
+         call table%init(INFO_TABLE_KEYS)
+         call table%register_int(i_tree_allocated, size(tree%nodes))
+         call table%register_int(i_tree_count, tree%top)
+         call table%register_char(i_pattern, pattern)
+         call table%register_real(i_parse_time, lap1)
+         call table%register_real(i_nfa_time, lap2)
+         call table%register_int(i_nfa_count, automaton%nfa%nfa_top)
+         call table%register_int(i_nfa_allocated, size(automaton%nfa%nodes))
+      end block output_prepare
 
       output: block
          character(NUM_DIGIT_KEY) :: parse_time, nfa_time, memory, nfa_count, nfa_allocated, tree_count, tree_allocated
