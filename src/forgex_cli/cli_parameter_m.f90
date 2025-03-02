@@ -20,7 +20,7 @@ module forgex_cli_parameters_m
    integer, parameter, public :: LEN_CMD = 16
 
    !> Number of digits for time display.
-   integer, parameter, public :: NUM_DIGIT_TIME = 13
+   integer, parameter, public :: NUM_DIGIT_TIME = 14
 
    !> Maximum langth of table field name.
    integer, parameter, public :: NUM_DIGIT_KEY = 32

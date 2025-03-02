@@ -130,7 +130,7 @@ contains
       real(real64), intent(in) :: lap_time
       character(NUM_DIGIT_TIME) :: res
 
-      character(3) :: unit
+      character(4) :: unit
       real(real64) :: multiplied
 
       unit = 's'
@@ -156,7 +156,7 @@ contains
          multiplied = lap_time * 1d9
       end if
 
-      unit = ' '//unit
+      unit = ' '//trim(unit)
       write(res, '(f10.1, a)') multiplied, unit
 
    end function get_lap_time_in_appropriate_unit
