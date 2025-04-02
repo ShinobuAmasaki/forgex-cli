@@ -84,7 +84,6 @@ contains
       use :: forgex_automaton_m
       use :: forgex_syntax_tree_graph_m
       use :: forgex_syntax_tree_optimize_m
-      use :: forgex_cli_memory_calculation_m
       use :: forgex_api_internal_m
       use :: forgex_nfa_state_set_m
       use :: forgex_cli_utils_m
@@ -294,7 +293,6 @@ contains
    subroutine do_find_match_dense_dfa(flags, pattern, text, is_exactly)
       use :: forgex_automaton_m
       use :: forgex_syntax_tree_graph_m
-      use :: forgex_cli_memory_calculation_m
       use :: forgex_cli_time_measurement_m
       use :: forgex_dense_dfa_m
       use :: forgex_nfa_state_set_m

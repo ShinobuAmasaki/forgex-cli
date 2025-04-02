@@ -26,7 +26,6 @@ contains
       use :: forgex_syntax_tree_graph_m
       use :: forgex_syntax_tree_optimize_m
       ! use :: forgex_syntax_tree_optimize_exp_m
-      use :: forgex_cli_memory_calculation_m
       use :: forgex_cli_print_m
       use :: forgex_error_m
       implicit none
@@ -122,7 +121,6 @@ contains
 
 
    subroutine do_debug_thompson(flags, pattern)
-      use :: forgex_cli_memory_calculation_m
       use :: forgex_automaton_m
       use :: forgex_syntax_tree_graph_m
       use :: forgex_utility_m
