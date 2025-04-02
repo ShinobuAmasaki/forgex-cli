@@ -25,6 +25,7 @@ contains
    subroutine do_debug_ast(flags, pattern)
       use :: forgex_syntax_tree_graph_m
       use :: forgex_syntax_tree_optimize_m
+      ! use :: forgex_syntax_tree_optimize_exp_m
       use :: forgex_cli_memory_calculation_m
       use :: forgex_cli_print_m
       use :: forgex_error_m
@@ -55,10 +56,7 @@ contains
 
       time_measure_2: block
          call time_begin
-         entire = get_entire_literal(tree)
-         prefix = get_prefix_literal(tree)
-         ! middle = get_middle_literal(tree)
-         suffix = get_suffix_literal(tree)
+         call extract_literal(tree, entire, prefix, suffix, middle)
          lap2 = time_lap()
       end block time_measure_2
 
@@ -129,6 +127,7 @@ contains
       use :: forgex_syntax_tree_graph_m
       use :: forgex_utility_m
       use :: forgex_error_m
+      use :: forgex_cube_m
       use :: forgex_cli_utils_m
       use :: forgex_cli_print_m
       implicit none
@@ -150,7 +149,6 @@ contains
       
       time_measure: block
          call time_begin()
-         ! call build_syntax_tree(trim(pattern), tree%tape, tree, root)
          call tree%build(trim(pattern))
          lap1 = time_lap()
 
@@ -159,7 +157,7 @@ contains
             stop
          end if
 
-         call automaton%nfa%build(tree, automaton%nfa_entry, automaton%nfa_exit, automaton%all_segments)
+         call automaton%nfa%build(tree, automaton%nfa_entry, automaton%nfa_exit, automaton%cube)
          lap2 = time_lap()
       end block time_measure
 
@@ -190,8 +188,8 @@ contains
          call table%register_char(i_pattern, pattern)
          call table%register_real(i_parse_time, lap1)
          call table%register_real(i_nfa_time, lap2)
-         call table%register_int(i_nfa_count, automaton%nfa%nfa_top)
-         call table%register_int(i_nfa_allocated, size(automaton%nfa%nodes))
+         call table%register_int(i_nfa_count, automaton%nfa%top)
+         call table%register_int(i_nfa_allocated, size(automaton%nfa%graph))
       end block output_prepare
 
       output: block
