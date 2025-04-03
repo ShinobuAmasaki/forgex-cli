@@ -2,7 +2,7 @@
 !
 ! MIT License
 !
-! (C) Amasaki Shinobu, 2023-2024
+! (C) Amasaki Shinobu, 2023-2025
 !     A regular expression engine for Fortran.
 !     forgex_cli_parameter_m module is a part of Forgex.
 !
@@ -30,6 +30,10 @@ module forgex_cli_parameters_m
 
    !> The buffer length of displaying the AST.
    integer, parameter, public :: TREE_BUFF_LEN = 2**16
+
+   !> The size of hash table for result table ouput.
+   integer, parameter, public :: KEY_SIZE_HASH_TABLE = 32
+   integer, parameter, public :: TABLE_SIZE_HASH_TABLE = 128
 
 !---------------------------------------------------------------------!
    !> Name of the subcommand debug.
@@ -78,8 +82,9 @@ module forgex_cli_parameters_m
    character(*), parameter, public :: LF = char(10)
 
    !> Headers
-   character(*), parameter, public :: HEADER_NFA = "========== Thompson NFA ==========="
-   character(*), parameter, public :: HEADER_DFA = "=============== DFA ==============="
-   character(*), parameter, public :: FOOTER     = "==================================="
+   character(*), parameter, public :: HEADER_MAIN = "===========Forgex CLI Summary=========="
+   character(*), parameter, public :: HEADER_NFA  = "============ Thompson NFA ============="
+   character(*), parameter, public :: HEADER_DFA  = "================= DFA ================="
+   character(*), parameter, public :: FOOTER      = "======================================="
 
 end module forgex_cli_parameters_m

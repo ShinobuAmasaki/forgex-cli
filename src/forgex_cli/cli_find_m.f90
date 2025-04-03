@@ -2,7 +2,7 @@
 !
 ! MIT License
 !
-! (C) Amasaki Shinobu, 2023-2024
+! (C) Amasaki Shinobu, 2023-2025
 !     A regular expression engine for Fortran.
 !     forgex_cli_find_m module is a part of Forgex.
 !
@@ -27,7 +27,9 @@ contains
       use :: forgex_parameters_m, only: INVALID_CHAR_INDEX
       use :: forgex_cli_time_measurement_m
       use :: forgex_cli_utils_m, only: text_highlight_green
-      use :: forgex_cli_print_m
+      ! use :: forgex_cli_print_m
+      use :: forgex_cli_hash_table_m
+      use :: forgex_cli_keys_hash_table
       implicit none
       logical, intent(in) :: flags(:)
       character(*), intent(in) :: pattern, text
@@ -36,7 +38,7 @@ contains
       real(real64) :: lap
       logical :: res
       character(:), allocatable :: res_string
-      integer :: from, to, unused
+      integer :: from, to, unused, ierr
       type(table_t) :: table
 
       res_string = ''
@@ -55,25 +57,28 @@ contains
       call regex(pattern, text, res_string, unused, from=from, to=to)
 
       output_prepare: block
-         call table%init(info_table_keys)
-         call table%register_char(i_pattern, pattern)
-         call table%register_char(i_text, '"'//text_highlight_green(text, from, to)//'"')
-         call table%register_logical(i_matching_result, res)
-         call table%register_real(i_total_time, lap)
+         call table%init()
+         call table%insert(k_pattern, pattern, ierr)
+         call table%insert(k_text, '"'//text_highlight_green(text, from, to)//'"', ierr)
+         call table%insert(k_matching_result, res, ierr)
+         call table%insert(k_total_time, lap, ierr)
       end block output_prepare
 
       output: block
 
          if (.not. flags(FLAG_NO_TABLE)) then
-            table%info(i_pattern)%is    = .true.
-            table%info(i_text)%is       =.true.
-            table%info(i_total_time)%is = .true.
+            call table%set_to_be_printed(k_pattern, ierr)
+            call table%set_to_be_printed(k_text, ierr)
+            call table%set_to_be_printed(k_total_time, ierr)
          end if
 
-         table%info(i_matching_result)%is = .true. 
+         call table%set_to_be_printed(k_matching_result, ierr)
 
          call table%justify()
-         call table%write()
+         call table%write(k_pattern)
+         call table%write(k_text)
+         call table%write(k_total_time)
+         call table%write(k_matching_result)
 
       end block output
 
@@ -89,6 +94,8 @@ contains
       use :: forgex_cli_utils_m
       use :: forgex_utility_m, only: is_there_caret_at_the_top, is_there_dollar_at_the_end
       use :: forgex_parameters_m, only: ACCEPTED_EMPTY
+      use :: forgex_cli_hash_table_m, only: table_t
+      use :: forgex_cli_keys_hash_table
       implicit none
       logical, intent(in) :: flags(:)
       character(*), intent(in) :: pattern
@@ -97,6 +104,7 @@ contains
 
       type(tree_t) :: tree
       type(automaton_t) :: automaton
+      type(table_t) :: table
 
       integer :: uni, ierr, i
       character(:), allocatable :: dfa_for_print, prefix, suffix, entire, factor_unused
@@ -200,87 +208,66 @@ contains
       close(uni)
 
       output: block
-         character(NUM_DIGIT_KEY) :: pattern_key, text_key
-         character(NUM_DIGIT_KEY) :: parse_time, extract_time
-         character(NUM_DIGIT_KEY) :: nfa_time, dfa_init_time, matching_time, memory
-         character(NUM_DIGIT_KEY) :: runs_engine_key
-         character(NUM_DIGIT_KEY) :: tree_count
-         character(NUM_DIGIT_KEY) :: nfa_count
-         character(NUM_DIGIT_KEY) :: dfa_count, matching_result
-         character(NUM_DIGIT_KEY) :: cbuff(13) = ''
-         integer :: memsiz
-
-         pattern_key    = "pattern:"
-         text_key       = "text:"
-         parse_time     = "parse time:"
-         extract_time   = "extract literal time:"
-         runs_engine_key= "runs engine:"
-
-         nfa_time       = "compile nfa time:"
-         dfa_init_time  = "dfa initialize time:"
-         matching_time  = "search time:"
-         memory         = "memory (estimated):"
-         matching_result= "matching result:"
-
-         tree_count     = "tree node count:"
-         nfa_count      = "nfa states:"
-         dfa_count      = "dfa states:"
-
-
-         if (flags(FLAG_VERBOSE)) then
-            cbuff(:) = [pattern_key, text_key, parse_time, extract_time, runs_engine_key, nfa_time, dfa_init_time,  &
-                        matching_time, matching_result, memory, tree_count, nfa_count, dfa_count]
-            call right_justify(cbuff)
-
-            write(stdout, '(a, 1x, a)') trim(cbuff(1)), trim(adjustl(pattern))
-            write(stdout, '(a, 1x, a)') trim(cbuff(2)), '"'//text_highlight_green(text, from, to)//'"'
-            write(stdout, fmt_out_time) trim(cbuff(3)), get_lap_time_in_appropriate_unit(lap1)
-            write(stdout, fmt_out_time) trim(cbuff(4)), get_lap_time_in_appropriate_unit(lap2)
-            write(stdout, fmt_out_logi) trim(cbuff(5)), flag_runs_engine
-
-            if (flag_runs_engine .or. .not. flag_fixed_string) then
-               write(stdout, fmt_out_time) trim(cbuff(6)), get_lap_time_in_appropriate_unit(lap3)
-               write(stdout, fmt_out_time) trim(cbuff(7)), get_lap_time_in_appropriate_unit(lap4)
-            else
-               write(stdout, fmt_out_char) trim(cbuff(6)), not_running
-               write(stdout, fmt_out_char) trim(cbuff(7)), not_running
-            end if
-
-            write(stdout, fmt_out_time) trim(cbuff(8)), get_lap_time_in_appropriate_unit(lap5)
-            write(stdout, fmt_out_logi) trim(cbuff(9)), res
-
-            write(stdout, fmt_out_ratio) trim(cbuff(11)), tree%top, size(tree%nodes, dim=1)
-            write(stdout, fmt_out_ratio) trim(cbuff(12)), automaton%nfa%top, automaton%nfa%nfa_limit
-            write(stdout, fmt_out_ratio) trim(cbuff(13)), automaton%dfa%dfa_top, automaton%dfa%dfa_limit
-         else if (flags(FLAG_NO_TABLE)) then
-            continue
+         
+         call table%init()
+         call table%insert(k_pattern, trim(adjustl(pattern)), ierr)
+         call table%insert(k_text, '"'//text_highlight_green(text, from, to)//'"', ierr)
+         call table%insert(k_parse_time, get_lap_time_in_appropriate_unit(lap1), ierr)
+         call table%insert(k_literal_time, get_lap_time_in_appropriate_unit(lap2), ierr)
+         call table%insert(k_runs_engine, flag_runs_engine, ierr)
+         if (flag_runs_engine) then
+            call table%insert(k_nfa_time, get_lap_time_in_appropriate_unit(lap3), ierr)
+            call table%insert(k_dfa_init_time, get_lap_time_in_appropriate_unit(lap4), ierr)
          else
-            cbuff(:) = [pattern_key, text_key, parse_time, extract_time, runs_engine_key, nfa_time, dfa_init_time, &
-                        matching_time, matching_result, memory, (repeat(" ", NUM_DIGIT_KEY), i = 1, 3)]
-            call right_justify(cbuff)
-            write(stdout, '(a,1x,a)') trim(cbuff(1)), pattern
-            write(stdout, '(a,1x,a)') trim(cbuff(2)), "'"//text_highlight_green(text, from, to)//"'"
-            write(stdout, fmt_out_time) trim(cbuff(3)), get_lap_time_in_appropriate_unit(lap1)
-            write(stdout, fmt_out_time) trim(cbuff(4)), get_lap_time_in_appropriate_unit(lap2)
-            write(stdout, fmt_out_logi) trim(cbuff(5)), flag_runs_engine
-
-            if (flag_runs_engine .or. .not. flag_fixed_string) then
-               write(stdout, fmt_out_time) trim(cbuff(6)), get_lap_time_in_appropriate_unit(lap3)
-               write(stdout, fmt_out_time) trim(cbuff(7)), get_lap_time_in_appropriate_unit(lap4)
-            else
-               write(stdout, fmt_out_char) trim(cbuff(6)), not_running
-               write(stdout, fmt_out_char) trim(cbuff(7)), not_running
-            end if
-
-            write(stdout, fmt_out_time) trim(cbuff(8)), get_lap_time_in_appropriate_unit(lap5)
-            write(stdout, fmt_out_logi) trim(cbuff(9)), res
+            call table%insert(k_nfa_time, not_running, ierr)
+            call table%insert(k_dfa_init_time, not_running, ierr)
          end if
 
+         call table%insert(k_matching_time, get_lap_time_in_appropriate_unit(lap5), ierr)
+         call table%insert(k_matching_result, res, ierr)
+         call table%insert(k_tree_count, tree%top, size(tree%nodes, dim=1), ierr)
+         call table%insert(k_nfa_count, automaton%nfa%top, automaton%nfa%nfa_limit, ierr)
+         call table%insert(k_dfa_count, automaton%dfa%dfa_top, automaton%dfa%dfa_limit, ierr)
+
+         if (flags(FLAG_NO_TABLE)) then
+            continue
+         else
+            call table%set_to_be_printed(k_pattern, ierr)
+            call table%set_to_be_printed(k_text, ierr)
+            call table%set_to_be_printed(k_parse_time, ierr)
+            call table%set_to_be_printed(k_literal_time, ierr)
+            call table%set_to_be_printed(k_runs_engine, ierr)
+            call table%set_to_be_printed(k_nfa_time, ierr)
+            call table%set_to_be_printed(k_dfa_init_time, ierr)
+            call table%set_to_be_printed(k_matching_time, ierr)
+            call table%set_to_be_printed(k_matching_result, ierr)
+            if (flags(FLAG_VERBOSE)) then
+               call table%set_to_be_printed(k_tree_count, ierr)
+               call table%set_to_be_printed(k_nfa_count, ierr)
+               call table%set_to_be_printed(k_dfa_count, ierr)
+            end if
+         end if
+
+         write(stdout, fmta) HEADER_MAIN
+         call table%justify()
+         call table%write(k_pattern)
+         call table%write(k_text)
+         call table%write(k_parse_time)
+         call table%write(k_literal_time)
+         call table%write(k_runs_engine)
+         call table%write(k_nfa_time)
+         call table%write(k_dfa_init_time)
+         call table%write(k_matching_time)
+         call table%write(k_matching_result)
+         call table%write(k_tree_count)
+         call table%write(k_nfa_count)
+         call table%write(k_dfa_count)
+
          if (flags(FLAG_TABLE_ONLY) .or. .not. flag_runs_engine .or. flag_fixed_string) then
+            write(stdout, fmta) FOOTER
             return
          end if
 
-         write(stdout, *) ""
 
          write(stdout, fmta, advance='no') trim(dfa_for_print)
          write(stdout, fmta) FOOTER
@@ -298,6 +285,8 @@ contains
       use :: forgex_nfa_state_set_m
       use :: forgex_cli_utils_m
       use :: forgex_utility_m
+      use :: forgex_cli_hash_table_m, only: table_t
+      use :: forgex_cli_keys_hash_table
       implicit none
       logical, intent(in) :: flags(:)
       character(*), intent(in) :: pattern
@@ -306,6 +295,7 @@ contains
 
       type(tree_t) :: tree
       type(automaton_t) :: automaton
+      type(table_t) :: table
 
       integer :: uni, ierr, i
       character(:), allocatable :: dfa_for_print
@@ -383,62 +373,52 @@ contains
       close(uni)
 
       output: block
-         character(NUM_DIGIT_KEY) :: pattern_key, text_key
-         character(NUM_DIGIT_KEY) :: parse_time, nfa_time, dfa_init_time, dfa_compile_time, matching_time
-         character(NUM_DIGIT_KEY) :: memory
-         character(NUM_DIGIT_KEY) :: tree_count, nfa_count, dfa_count
-         character(NUM_DIGIT_KEY) :: matching_result
-         character(NUM_DIGIT_KEY) :: cbuff(12) = ''
-         integer :: memsiz
+         call table%init()
+         call table%insert(k_pattern, trim(adjustl(pattern)), ierr)
+         call table%insert(k_text, "'"//text_highlight_green(text, from, to)//"'", ierr)
+         call table%insert(k_parse_time, get_lap_time_in_appropriate_unit(lap1), ierr)
+         call table%insert(k_nfa_time, get_lap_time_in_appropriate_unit(lap2), ierr)
+         call table%insert(k_dfa_init_time, get_lap_time_in_appropriate_unit(lap3), ierr)
+         call table%insert(k_dfa_compile_time, get_lap_time_in_appropriate_unit(lap4), ierr)
+         call table%insert(k_matching_time, get_lap_time_in_appropriate_unit(lap5), ierr)
+         call table%insert(k_matching_result, res, ierr)
+         call table%insert(k_tree_count, tree%top, size(tree%nodes, dim=1), ierr)
+         call table%insert(k_nfa_count, automaton%nfa%top, automaton%nfa%nfa_limit, ierr)
+         call table%insert(k_dfa_count, automaton%dfa%dfa_top, automaton%dfa%dfa_limit, ierr)
 
-         pattern_key    = "pattern:"
-         text_key       = "text:"
-         parse_time     = "parse time:"
-         nfa_time       = "compile nfa time:"
-         dfa_init_time  = "dfa initialize time:"
-         dfa_compile_time = "compile dfa time:"
-         matching_time  = "search time:"
-         ! memory         = "memory (estimated):"
-         matching_result= "matching result:"
-
-         tree_count     = "tree node count:"
-         nfa_count      = "nfa states:"
-         dfa_count      = "dfa states:"
-
-         if (flags(FLAG_VERBOSE)) then
-            cbuff = [pattern_key, text_key, parse_time, nfa_time, dfa_init_time, dfa_compile_time, matching_time,&
-                     matching_result, memory, tree_count, nfa_count, dfa_count]
-            call right_justify(cbuff)
-
-            write(stdout, '(a, 1x, a)') trim(cbuff(1)), trim(adjustl(pattern))
-            write(stdout, '(a, 1x, a)') trim(cbuff(2)), "'"//text_highlight_green(text,from,to)//"'"
-            write(stdout, fmt_out_time) trim(cbuff(3)), get_lap_time_in_appropriate_unit(lap1)
-            write(stdout, fmt_out_time) trim(cbuff(4)), get_lap_time_in_appropriate_unit(lap2)
-            write(stdout, fmt_out_time) trim(cbuff(5)), get_lap_time_in_appropriate_unit(lap3)
-            write(stdout, fmt_out_time) trim(cbuff(6)), get_lap_time_in_appropriate_unit(lap4)
-            write(stdout, fmt_out_time) trim(cbuff(7)), get_lap_time_in_appropriate_unit(lap5)
-            write(stdout, fmt_out_logi) trim(cbuff(8)), res
-            write(stdout, fmt_out_ratio) trim(cbuff(10)), tree%top, size(tree%nodes, dim=1)
-            write(stdout, fmt_out_ratio) trim(cbuff(11)), automaton%nfa%top, automaton%nfa%nfa_limit
-            write(stdout, fmt_out_ratio) trim(cbuff(12)), automaton%dfa%dfa_top, automaton%dfa%dfa_limit
-         else if (flags(FLAG_NO_TABLE)) then
+         if (flags(FLAG_NO_TABLE)) then
             continue
          else
-            cbuff = [pattern_key, text_key, parse_time, nfa_time, dfa_init_time, dfa_compile_time, matching_time,&
-            matching_result, memory, (repeat(" ", NUM_DIGIT_KEY), i = 1, 3)]
-            call right_justify(cbuff)
-
-            write(stdout, '(a, 1x, a)') trim(cbuff(1)), trim(adjustl(pattern))
-            write(stdout, '(a, 1x, a)') trim(cbuff(2)), "'"//text_highlight_green(text,from,to)//"'"
-            write(stdout, fmt_out_time) trim(cbuff(3)), get_lap_time_in_appropriate_unit(lap1)
-            write(stdout, fmt_out_time) trim(cbuff(4)), get_lap_time_in_appropriate_unit(lap2)
-            write(stdout, fmt_out_time) trim(cbuff(5)), get_lap_time_in_appropriate_unit(lap3)
-            write(stdout, fmt_out_time) trim(cbuff(6)), get_lap_time_in_appropriate_unit(lap4)
-            write(stdout, fmt_out_time) trim(cbuff(7)), get_lap_time_in_appropriate_unit(lap5)
-            write(stdout, fmt_out_logi) trim(cbuff(8)), res
+            call table%set_to_be_printed(k_pattern, ierr)
+            call table%set_to_be_printed(k_text, ierr)
+            call table%set_to_be_printed(k_parse_time, ierr)
+            call table%set_to_be_printed(k_nfa_time, ierr)
+            call table%set_to_be_printed(k_dfa_init_time, ierr)
+            call table%set_to_be_printed(k_dfa_compile_time, ierr)
+            call table%set_to_be_printed(k_matching_time, ierr)
+            call table%set_to_be_printed(k_matching_result, ierr)
+            if (flags(FLAG_VERBOSE)) then
+               call table%set_to_be_printed(k_tree_count, ierr)
+               call table%set_to_be_printed(k_nfa_count, ierr)
+               call table%set_to_be_printed(k_dfa_count, ierr)
+            end if
          end if
 
+         write(stdout, fmta) HEADER_MAIN
+         call table%justify()
+         call table%write(k_pattern)
+         call table%write(k_text)
+         call table%write(k_parse_time)
+         call table%write(k_nfa_time)
+         call table%write(k_dfa_compile_time)
+         call table%write(k_matching_time)
+         call table%write(k_matching_result)
+         call table%write(k_tree_count)
+         call table%write(k_nfa_count)
+         call table%write(k_dfa_count)
+
          if (flags(FLAG_TABLE_ONLY))  then
+            write(stdout, fmta) FOOTER
             return
          end if
 

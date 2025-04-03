@@ -2,7 +2,7 @@
 !
 ! MIT License
 !
-! (C) Amasaki Shinobu, 2023-2024
+! (C) Amasaki Shinobu, 2023-2025
 !     A regular expression engine for Fortran.
 !     forgex_cli_debug_m module is a part of Forgex.
 !
@@ -10,7 +10,7 @@ module forgex_cli_debug_m
    use, intrinsic :: iso_fortran_env, only: int32,real64, stderr => error_unit, stdout => output_unit
    use :: forgex_cli_time_measurement_m, only: time_begin, time_lap, get_lap_time_in_appropriate_unit
    use :: forgex_cli_parameters_m, only: NUM_DIGIT_KEY, fmt_out_time, fmt_out_int, fmt_out_ratio, &
-            fmt_out_logi, fmta, fmt_out_char, CRLF, LF, HEADER_DFA, HEADER_NFA ,FOOTER
+            fmt_out_logi, fmta, fmt_out_char, CRLF, LF, HEADER_MAIN, HEADER_DFA, HEADER_NFA ,FOOTER
    use :: forgex_enums_m, only: FLAG_HELP, FLAG_NO_TABLE, FLAG_VERBOSE, FLAG_TABLE_ONLY, OS_WINDOWS
    use :: forgex_cli_utils_m, only: get_os_type
    use :: forgex_cli_help_messages_m, only: print_help_debug_ast, print_help_debug_thompson
@@ -26,7 +26,9 @@ contains
       use :: forgex_syntax_tree_graph_m
       use :: forgex_syntax_tree_optimize_m
       ! use :: forgex_syntax_tree_optimize_exp_m
-      use :: forgex_cli_print_m
+      ! use :: forgex_cli_print_m
+      use :: forgex_cli_hash_table_m
+      use :: forgex_cli_keys_hash_table
       use :: forgex_error_m
       implicit none
       logical, intent(in) :: flags(:)
@@ -64,19 +66,18 @@ contains
          middle = "<not implemented yet>" 
          if (trim(entire) == '') entire = "<none>" 
          if (trim(prefix) == '') prefix = "<none>" 
-         ! if (trim(middle) == '') middle = "<not implemented yet>" 
+         if (trim(middle) == '') middle = "<not implemented yet>" 
          if (trim(suffix) == '') suffix = "<none>" 
 
-         call table%init(INFO_TABLE_KEYS)
-         call table%register_int(i_tree_allocated, size(tree%nodes))
-         call table%register_int(i_tree_count, tree%top)
-         call table%register_char(i_pattern, pattern)
-         call table%register_real(i_parse_time, lap1)
-         call table%register_char(i_literal_all, entire)
-         call table%register_char(i_literal_pre, prefix)
-         call table%register_char(i_literal_mid, middle)
-         call table%register_char(i_literal_post, suffix)
-         call table%register_real(i_literal_time, lap2)
+         call table%init()
+         call table%insert(k_tree_count, tree%top, size(tree%nodes), ierr)
+         call table%insert(k_pattern, pattern, ierr)
+         call table%insert(k_parse_time, lap1, ierr)
+         call table%insert(k_literal_all, entire, ierr)
+         call table%insert(k_literal_pre, prefix, ierr)
+         call table%insert(k_literal_mid, middle, ierr)
+         call table%insert(k_literal_post, suffix, ierr)
+         call table%insert(k_literal_time, lap2, ierr)
 
          open(newunit=uni, status='scratch')
          call tree%print(uni)
@@ -94,27 +95,43 @@ contains
 
       output: block
 
-         table%info(i_pattern)%is        = .true.
-         table%info(i_parse_time)%is     = .true.
-         table%info(i_literal_time)%is   = .true.
-         table%info(i_literal_all)%is    = .true.
-         table%info(i_literal_pre)%is    = .true.
-         table%info(i_literal_mid)%is    = .true.
-         table%info(i_literal_post)%is   = .true.
+         if (flags(FLAG_VERBOSE)) call table%set_to_be_printed(k_tree_count, ierr)
+         call table%set_to_be_printed(k_pattern, ierr)
+         call table%set_to_be_printed(k_parse_time, ierr)
+         call table%set_to_be_printed(k_literal_time, ierr)
+         call table%set_to_be_printed(k_literal_all, ierr)
+         call table%set_to_be_printed(k_literal_pre, ierr)
+         call table%set_to_be_printed(k_literal_mid, ierr)
+         call table%set_to_be_printed(k_literal_post, ierr)
+         
 
-         if (flags(FLAG_VERBOSE)) then
-            table%info(i_tree_count)%is     = .true.
-            table%info(i_tree_allocated)%is = .true.
-         end if
          
          if (.not. flags(FLAG_NO_TABLE)) then
+            write(stdout, fmta) HEADER_MAIN
             call table%justify()
-            call table%write()
+            call table%write(k_pattern)
+            call table%write(k_parse_time)
+            call table%write(k_literal_time)
+            call table%write(k_literal_all)
+            call table%write(k_literal_pre)
+            call table%write(k_literal_mid)
+            call table%write(k_literal_post)
+            call table%write(k_tree_count)
+            if (flags(FLAG_VERBOSE)) then
+               call table%set_to_be_printed(k_tree_count, ierr)            
+            end if
          end if
 
-         if (flags(FLAG_TABLE_ONLY)) return
+         if (flags(FLAG_TABLE_ONLY)) then
+            write(stdout, fmta) FOOTER
+            return
+         else if (flags(FLAG_NO_TABLE)) then
+            write(stdout, fmta) ast
+            return
+         end if
+         write(stdout, fmta) FOOTER
          write(stdout, fmta) ast
-   
+         write(stdout, fmta) FOOTER   
       end block output
 
    end subroutine do_debug_ast
@@ -127,7 +144,8 @@ contains
       use :: forgex_error_m
       use :: forgex_cube_m
       use :: forgex_cli_utils_m
-      use :: forgex_cli_print_m
+      use :: forgex_cli_hash_table_m
+      use :: forgex_cli_keys_hash_table
       implicit none
       logical, intent(in) :: flags(:)
       character(*), intent(in) :: pattern
@@ -180,52 +198,40 @@ contains
          end do
          close(uni)
 
-         call table%init(INFO_TABLE_KEYS)
-         call table%register_int(i_tree_allocated, size(tree%nodes))
-         call table%register_int(i_tree_count, tree%top)
-         call table%register_char(i_pattern, pattern)
-         call table%register_real(i_parse_time, lap1)
-         call table%register_real(i_nfa_time, lap2)
-         call table%register_int(i_nfa_count, automaton%nfa%top)
-         call table%register_int(i_nfa_allocated, size(automaton%nfa%graph))
+         call table%init()
+         call table%insert(k_tree_count, tree%top, size(tree%nodes), ierr)
+         call table%insert(k_pattern, pattern, ierr)
+         call table%insert(k_parse_time, lap1, ierr)
+         call table%insert(k_nfa_time, lap2, ierr)
+         call table%insert(k_nfa_count, automaton%nfa%top, size(automaton%nfa%graph), ierr)
       end block output_prepare
 
       output: block
-         character(NUM_DIGIT_KEY) :: parse_time, nfa_time, memory, nfa_count, nfa_allocated, tree_count, tree_allocated
-         character(NUM_DIGIT_KEY) :: cbuff(7) = ''
-         integer :: memsiz
-
-         table%info(i_pattern)%is        = .true.
-         table%info(i_parse_time)%is     = .true.
-         table%info(i_nfa_time)%is       = .true.
-
-         if (flags(FLAG_VERBOSE)) then
-            table%info(i_tree_count)%is     = .true.
-            table%info(i_tree_allocated)%is = .true.
-            table%info(i_nfa_count)%is      = .true.
-            table%info(i_nfa_allocated)%is  = .true.
+         call table%set_to_be_printed(k_pattern, ierr)
+         call table%set_to_be_printed(k_parse_time, ierr)
+         call table%set_to_be_printed(k_nfa_time, ierr)
+         if ( flags(FLAG_VERBOSE)) then
+            call table%set_to_be_printed(k_tree_count, ierr)
+            call table%set_to_be_printed(k_nfa_count, ierr)
          end if
 
          if (.not. flags(FLAG_NO_TABLE)) then
+            write(stdout, fmta) HEADER_MAIN
             call table%justify()
-            call table%write()
+            call table%write(k_pattern)
+            call table%write(k_parse_time)
+            call table%write(k_nfa_time)
+            call table%write(k_tree_count)
+            call table%write(k_nfa_count)
          end if
-
          if (flags(FLAG_TABLE_ONLY)) return
-         
-         write(stdout, *) ""
+
          write(stdout, fmta) HEADER_NFA
          write(stdout, fmta) trim(nfa)
-         write(stdout, fmta) "Note: all segments of NFA were disjoined with overlapping portions."
          write(stdout, fmta) FOOTER
 
       end block output
    end subroutine do_debug_thompson
-
-
-
-!=====================================================================!
-
 
 
 end module forgex_cli_debug_m
